@@ -3,7 +3,7 @@
 # The Pokémon-Style, Zero-Dependency Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.5.0"
+VERSION="0.6.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GLOBAL_HOME="${HOME}/.harnemon"
 
@@ -16,9 +16,8 @@ Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
-  adopt [species] [path]  Adopt a Harnemon instance into your project (alias: feed --link)
-                          Species: routis (민첩 라우터), bastion (설정 수호), ironik (철칙 디버깅), yagni (다이어트)
-  status [path]           Check your adopted Harnemon's status (Abilities, Moves, Held Items)
+  adopt [species] [path]  Adopt a starter Harnemon interactively or by name (1: Routis, 2: Bastion, 3: Ironik, 4: Yagni)
+  status [path]           Check your adopted partner's profile, moves, and held items
   feed [--link] [path]    Feed a Harness Pill to awaken a Harnemon (default: current directory)
   link [path]             Zero-dependency link: bind project to global Harnemon (~/.harnemon)
   sync [path]             Cross-pollinate: sync locally learned moves back to global Harnedex
@@ -34,16 +33,46 @@ The Pokémon Architecture:
   • Zero Dependencies: 100% POSIX Bash & Git, 0 npm/pip/cargo packages required
 
 Examples:
-  harnemon adopt                       # Adopt standard Harnemon in current directory
-  harnemon adopt routis                # Adopt the agile Routis species
-  harnemon status                      # View current Harnemon's moves and abilities
-  harnemon audit                       # Health-check your Harnemon
+  harnemon adopt                       # Interactive starter selection (Routis, Bastion, Ironik, Yagni)
+  harnemon adopt 1                     # Direct adopt: Routis (민첩 / 강철)
+  harnemon adopt yagni                 # Direct adopt: Yagni (노말 / 풀)
+  harnemon status                      # View current partner's stats and abilities
+  harnemon audit                       # Health-check your partner
   harnemon dex                         # Browse the 4 legendary Harnemons
 EOF
 }
 
+choose_starter_interactive() {
+  echo "" >&2
+  echo "┌──────────────────────────────────────────────────────────────┐" >&2
+  echo "│   🌟 스타팅 하네몬을 선택하세요! (Choose Your Starter)      │" >&2
+  echo "│   오박사의 연구소처럼, 함께 모험할 파트너를 선택합니다.     │" >&2
+  echo "└──────────────────────────────────────────────────────────────┘" >&2
+  echo "" >&2
+  echo "  1) ⚡ 루티스 (Routis)    [민첩 / 강철]  50토큰 스킬 라우터, 초경량 미니멀 종족" >&2
+  echo "  2) 🛡️ 바스티온 (Bastion) [바위 / 드래곤] 288개 기술 요새, 린트 설정 수호 종족" >&2
+  echo "  3) 🥋 아이로닉 (Ironik)  [격투 / 에스퍼] 철칙(The Iron Law)의 4단계 디버깅 종족" >&2
+  echo "  4) 🍃 야그니 (Yagni)     [노말 / 풀]     게으름의 사다리, 복잡성 삭제(-N lines) 종족" >&2
+  echo "" >&2
+  printf "파트너 선택 (1-4) [기본값: 1 루티스]: " >&2
+  local choice=""
+  if read -r choice; then
+    :
+  else
+    choice="1"
+  fi
+  [ -z "$choice" ] && choice="1"
+
+  case "$choice" in
+    2|bastion|바스티온) echo "bastion" ;;
+    3|ironik|아이로닉)   echo "ironik" ;;
+    4|yagni|야그니)     echo "yagni" ;;
+    1|routis|루티스|*)  echo "routis" ;;
+  esac
+}
+
 cmd_adopt() {
-  local species="standard"
+  local species=""
   local target_dir="."
 
   if [ $# -gt 0 ]; then
@@ -52,8 +81,10 @@ cmd_adopt() {
         species="$1"
         shift
         ;;
-      *)
-        ;;
+      1) species="routis"; shift ;;
+      2) species="bastion"; shift ;;
+      3) species="ironik"; shift ;;
+      4) species="yagni"; shift ;;
     esac
   fi
 
@@ -61,8 +92,43 @@ cmd_adopt() {
     target_dir="$1"
   fi
 
-  echo "🌟 [Harnemon Adoption] Adopting '$species' Harnemon instance into project..."
-  cmd_feed --link "$target_dir"
+  if [ -z "$species" ]; then
+    species="$(choose_starter_interactive)"
+  fi
+
+  local species_name=""
+  local species_type=""
+  local species_desc=""
+
+  case "$species" in
+    routis)
+      species_name="루티스 (Routis)"
+      species_type="민첩 / 강철"
+      species_desc="50토큰 스킬 라우터 장착, 초경량 제로 디펜던시 미니멀 종족"
+      ;;
+    bastion)
+      species_name="바스티온 (Bastion)"
+      species_type="바위 / 드래곤"
+      species_desc="린터 및 포맷터 설정 수호, 강력한 Git 라이프사이클 게이트 종족"
+      ;;
+    ironik)
+      species_name="아이로닉 (Ironik)"
+      species_type="격투 / 에스퍼"
+      species_desc="철칙(The Iron Law) 디버깅, 근본 원인 규명 우선 수련 종족"
+      ;;
+    yagni)
+      species_name="야그니 (Yagni)"
+      species_type="노말 / 풀"
+      species_desc="게으름의 사다리, 불필요한 코드 라인 삭제 베기(-N lines) 종족"
+      ;;
+  esac
+
+  echo ""
+  echo "🎉 축하합니다! '$species_name [$species_type]'이(가) 파트너로 선택되었습니다!"
+  echo "   특징: $species_desc"
+  echo ""
+
+  cmd_feed --link "$target_dir" "$species" "$species_name" "$species_type" "$species_desc"
 }
 
 cmd_status() {
@@ -71,6 +137,18 @@ cmd_status() {
 
   echo "⚡ [Harnemon Status] Inspecting Partner at: $target_dir"
   echo "──────────────────────────────────────────────"
+  if [ -f "$target_dir/.agents/partner.json" ]; then
+    local p_name p_type p_desc
+    p_name=$(grep -o '"name": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
+    p_type=$(grep -o '"type": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
+    p_desc=$(grep -o '"description": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
+    echo "🐾 Partner: $p_name [$p_type]"
+    echo "   Motto:   $p_desc"
+  else
+    echo "🐾 Partner: 일반 하네몬 (Standard Harnemon)"
+  fi
+  echo "──────────────────────────────────────────────"
+
   local rules_dir="$target_dir/.agents/rules"
   if [ -d "$rules_dir" ]; then
     echo "📜 Active Abilities (Rules):"
@@ -113,6 +191,10 @@ cmd_status() {
 cmd_feed() {
   local use_link=false
   local target_dir=""
+  local p_species="standard"
+  local p_name="하네몬 (Harnemon)"
+  local p_type="노말"
+  local p_desc="3대 기둥과 자가 진화 능력을 지닌 표준 하네몬"
 
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -121,7 +203,17 @@ cmd_feed() {
         shift
         ;;
       *)
-        target_dir="$1"
+        if [ -z "$target_dir" ]; then
+          target_dir="$1"
+        elif [ "$p_species" = "standard" ]; then
+          p_species="$1"
+        elif [ "$p_name" = "하네몬 (Harnemon)" ]; then
+          p_name="$1"
+        elif [ "$p_type" = "노말" ]; then
+          p_type="$1"
+        elif [ "$p_desc" = "3대 기둥과 자가 진화 능력을 지닌 표준 하네몬" ]; then
+          p_desc="$1"
+        fi
         shift
         ;;
     esac
@@ -167,13 +259,27 @@ cmd_feed() {
     done
   fi
 
+  # Save partner profile
+  cat << EOF > "$target_dir/.agents/partner.json"
+{
+  "species": "$p_species",
+  "name": "$p_name",
+  "type": "$p_type",
+  "description": "$p_desc",
+  "adopted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
   # Auto-wire AGENTS.md
   local agents_md="$target_dir/.agents/AGENTS.md"
   if [ ! -f "$agents_md" ]; then
-    cat << 'EOF' > "$agents_md"
+    cat << EOF > "$agents_md"
 # Harnemon Operating Rules (AGENTS.md)
 
-This project is governed by a Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
+**Partner**: $p_name [$p_type]
+**Description**: $p_desc
+
+This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
 
 ## Active Abilities (Rules)
 EOF
@@ -236,7 +342,7 @@ EOF
   fi
 
   echo "──────────────────────────────────────────────"
-  echo "✨ [Harnemon] Harnemon successfully awakened in this folder!"
+  echo "✨ [Harnemon] $p_name successfully awakened in this folder!"
   echo "   Dependency footprint: 0 bytes. Build tools untouched."
   if [ "$use_link" = true ]; then
     echo "   Global belt connected: Any evolution in ~/.harnemon is live immediately."

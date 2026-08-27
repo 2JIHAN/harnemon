@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# bin/harnemon — Harnemon (하네몬) CLI
-# The Pokémon-Style, Zero-Dependency Harness Companion for AI Coding Agents.
+# bin/harnemon — Harnemon CLI
+# The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.6.0"
+VERSION="0.7.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GLOBAL_HOME="${HOME}/.harnemon"
 
 show_help() {
   cat << 'EOF'
-  ⚡ HARNEMON (하네몬) ⚡
+  ⚡ HARNEMON ⚡
   The Pokémon-Style, Zero-Dependency Autonomous Harness Companion
 
 Usage:
@@ -17,26 +17,26 @@ Usage:
 
 Commands:
   adopt [species] [path]  Adopt a starter Harnemon interactively or by name (1: Routis, 2: Bastion, 3: Ironik, 4: Yagni)
-  status [path]           Check your adopted partner's profile, moves, and held items
-  feed [--link] [path]    Feed a Harness Pill to awaken a Harnemon (default: current directory)
-  link [path]             Zero-dependency link: bind project to global Harnemon (~/.harnemon)
+  status [path]           Check your adopted partner's profile, abilities, moves, and held items
+  feed [--link] [path]    Feed a Harness Pill to awaken a Harnemon in a target folder
+  link [path]             Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
   sync [path]             Cross-pollinate: sync locally learned moves back to global Harnedex
-  dex                     Open the Harnedex (하네몬 도감) to inspect legendary archetypes
+  dex                     Open the Harnedex to inspect the 4 legendary archetypes
   audit [path]            Diagnose Harnemon health, token bloat, and rule integrity
   init <name>             Scaffold a new custom Harnemon species repository
   help, -h                Show this help message
   version, -v             Show Harnemon version
 
 The Pokémon Architecture:
-  • Global Harnemon = Class / Species (원형 설계도 / 피카츄라는 '종')
-  • Project Harnemon = Instance / Individual (이 레포에 분양되어 특화 진화하는 '지우의 피카츄')
+  • Global Harnemon = Class / Species (Master blueprint / The species 'Pikachu')
+  • Project Harnemon = Instance / Individual (Adopted into this repo to evolve / 'Ash's Pikachu')
   • Zero Dependencies: 100% POSIX Bash & Git, 0 npm/pip/cargo packages required
 
 Examples:
   harnemon adopt                       # Interactive starter selection (Routis, Bastion, Ironik, Yagni)
-  harnemon adopt 1                     # Direct adopt: Routis (민첩 / 강철)
-  harnemon adopt yagni                 # Direct adopt: Yagni (노말 / 풀)
-  harnemon status                      # View current partner's stats and abilities
+  harnemon adopt 1                     # Direct adopt: Routis (Agile / Steel)
+  harnemon adopt yagni                 # Direct adopt: Yagni (Normal / Grass)
+  harnemon status                      # View current partner's profile and moves
   harnemon audit                       # Health-check your partner
   harnemon dex                         # Browse the 4 legendary Harnemons
 EOF
@@ -45,16 +45,16 @@ EOF
 choose_starter_interactive() {
   echo "" >&2
   echo "┌──────────────────────────────────────────────────────────────┐" >&2
-  echo "│   🌟 스타팅 하네몬을 선택하세요! (Choose Your Starter)      │" >&2
-  echo "│   오박사의 연구소처럼, 함께 모험할 파트너를 선택합니다.     │" >&2
+  echo "│   🌟 Choose Your Starter Harnemon!                           │" >&2
+  echo "│   Pick your autonomous AI companion for this repository.     │" >&2
   echo "└──────────────────────────────────────────────────────────────┘" >&2
   echo "" >&2
-  echo "  1) ⚡ 루티스 (Routis)    [민첩 / 강철]  50토큰 스킬 라우터, 초경량 미니멀 종족" >&2
-  echo "  2) 🛡️ 바스티온 (Bastion) [바위 / 드래곤] 288개 기술 요새, 린트 설정 수호 종족" >&2
-  echo "  3) 🥋 아이로닉 (Ironik)  [격투 / 에스퍼] 철칙(The Iron Law)의 4단계 디버깅 종족" >&2
-  echo "  4) 🍃 야그니 (Yagni)     [노말 / 풀]     게으름의 사다리, 복잡성 삭제(-N lines) 종족" >&2
+  echo "  1) ⚡ Routis   [Agile / Steel]     50-token skill router, ultralight minimal species" >&2
+  echo "  2) 🛡️ Bastion  [Rock / Dragon]     288-move fortress, linter config guardian species" >&2
+  echo "  3) 🥋 Ironik   [Fighting / Psychic] The Iron Law 4-step root-cause debugging species" >&2
+  echo "  4) 🍃 Yagni    [Normal / Grass]    Ladder of Laziness, complexity slasher (-N lines)" >&2
   echo "" >&2
-  printf "파트너 선택 (1-4) [기본값: 1 루티스]: " >&2
+  printf "Choose your partner (1-4) [Default: 1 Routis]: " >&2
   local choice=""
   if read -r choice; then
     :
@@ -64,10 +64,10 @@ choose_starter_interactive() {
   [ -z "$choice" ] && choice="1"
 
   case "$choice" in
-    2|bastion|바스티온) echo "bastion" ;;
-    3|ironik|아이로닉)   echo "ironik" ;;
-    4|yagni|야그니)     echo "yagni" ;;
-    1|routis|루티스|*)  echo "routis" ;;
+    2|bastion) echo "bastion" ;;
+    3|ironik)  echo "ironik" ;;
+    4|yagni)   echo "yagni" ;;
+    1|routis|*) echo "routis" ;;
   esac
 }
 
@@ -102,30 +102,30 @@ cmd_adopt() {
 
   case "$species" in
     routis)
-      species_name="루티스 (Routis)"
-      species_type="민첩 / 강철"
-      species_desc="50토큰 스킬 라우터 장착, 초경량 제로 디펜던시 미니멀 종족"
+      species_name="Routis"
+      species_type="Agile / Steel"
+      species_desc="50-token skill router, ultralight zero-dependency minimal species"
       ;;
     bastion)
-      species_name="바스티온 (Bastion)"
-      species_type="바위 / 드래곤"
-      species_desc="린터 및 포맷터 설정 수호, 강력한 Git 라이프사이클 게이트 종족"
+      species_name="Bastion"
+      species_type="Rock / Dragon"
+      species_desc="Guardian of configs, rigorous lifecycle Git hooks fortress"
       ;;
     ironik)
-      species_name="아이로닉 (Ironik)"
-      species_type="격투 / 에스퍼"
-      species_desc="철칙(The Iron Law) 디버깅, 근본 원인 규명 우선 수련 종족"
+      species_name="Ironik"
+      species_type="Fighting / Psychic"
+      species_desc="The Iron Law debugging, root-cause investigation discipline"
       ;;
     yagni)
-      species_name="야그니 (Yagni)"
-      species_type="노말 / 풀"
-      species_desc="게으름의 사다리, 불필요한 코드 라인 삭제 베기(-N lines) 종족"
+      species_name="Yagni"
+      species_type="Normal / Grass"
+      species_desc="Ladder of Laziness, slashes unneeded code (-N lines), harvests debt"
       ;;
   esac
 
   echo ""
-  echo "🎉 축하합니다! '$species_name [$species_type]'이(가) 파트너로 선택되었습니다!"
-  echo "   특징: $species_desc"
+  echo "🎉 Congratulations! '$species_name [$species_type]' has been adopted as your partner!"
+  echo "   Trait: $species_desc"
   echo ""
 
   cmd_feed --link "$target_dir" "$species" "$species_name" "$species_type" "$species_desc"
@@ -143,9 +143,9 @@ cmd_status() {
     p_type=$(grep -o '"type": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
     p_desc=$(grep -o '"description": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
     echo "🐾 Partner: $p_name [$p_type]"
-    echo "   Motto:   $p_desc"
+    echo "   Trait:   $p_desc"
   else
-    echo "🐾 Partner: 일반 하네몬 (Standard Harnemon)"
+    echo "🐾 Partner: Standard Harnemon"
   fi
   echo "──────────────────────────────────────────────"
 
@@ -192,9 +192,9 @@ cmd_feed() {
   local use_link=false
   local target_dir=""
   local p_species="standard"
-  local p_name="하네몬 (Harnemon)"
-  local p_type="노말"
-  local p_desc="3대 기둥과 자가 진화 능력을 지닌 표준 하네몬"
+  local p_name="Harnemon"
+  local p_type="Normal"
+  local p_desc="Standard Harnemon equipped with 3 Pillars and self-evolution"
 
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -207,11 +207,11 @@ cmd_feed() {
           target_dir="$1"
         elif [ "$p_species" = "standard" ]; then
           p_species="$1"
-        elif [ "$p_name" = "하네몬 (Harnemon)" ]; then
+        elif [ "$p_name" = "Harnemon" ]; then
           p_name="$1"
-        elif [ "$p_type" = "노말" ]; then
+        elif [ "$p_type" = "Normal" ]; then
           p_type="$1"
-        elif [ "$p_desc" = "3대 기둥과 자가 진화 능력을 지닌 표준 하네몬" ]; then
+        elif [ "$p_desc" = "Standard Harnemon equipped with 3 Pillars and self-evolution" ]; then
           p_desc="$1"
         fi
         shift
@@ -473,7 +473,7 @@ EOF
   cat << EOF > "$target_dir/README.md"
 # $base_name
 
-A custom Harnemon species built with [Harnemon (하네몬)](https://github.com/2JIHAN/harnemon).
+A custom Harnemon species built with [Harnemon](https://github.com/2JIHAN/harnemon).
 
 ## Harnemon Spec (Zero Build Dependencies)
 
@@ -601,22 +601,22 @@ cmd_audit() {
 }
 
 cmd_dex() {
-  echo "📖 [Harnedex / 하네몬 도감] Legendary Harnemon Archetypes"
+  echo "📖 [Harnedex] Legendary Harnemon Archetypes"
   echo "──────────────────────────────────────────────"
-  echo "No.001 루티스 (Routis)      — 민첩/강철 타입"
-  echo "       • Jihan Harness: 50토큰 스킬 라우터, 제로 디펜던시, 루트 클린"
+  echo "No.001 Routis      — Agile / Steel Type"
+  echo "       • Jihan Harness: 50-token skill router, zero-dependency root-clean"
   echo "       • Entry: docs/case-studies/01-jihan-harness.md"
   echo ""
-  echo "No.002 바스티온 (Bastion)    — 바위/드래곤 타입"
-  echo "       • Everything Claude: 288개 기술 장착, 린트 설정 수호(Config Guard)"
+  echo "No.002 Bastion     — Rock / Dragon Type"
+  echo "       • Everything Claude: 288 moves, Config-Guard hard gate"
   echo "       • Entry: docs/case-studies/02-everything-claude-code.md"
   echo ""
-  echo "No.003 아이로닉 (Ironik)     — 격투/에스퍼 타입"
-  echo "       • Superpowers: 철칙(The Iron Law)의 디버깅, TDD 연속 콤보"
+  echo "No.003 Ironik      — Fighting / Psychic Type"
+  echo "       • Superpowers: The Iron Law debugging, rigorous TDD combo"
   echo "       • Entry: docs/case-studies/03-obra-superpowers.md"
   echo ""
-  echo "No.004 야그니 (Yagni)        — 노말/풀 타입"
-  echo "       • Ponytail: 게으름의 사다리, 과잉 엔지니어링 삭제 베기(-N lines)"
+  echo "No.004 Yagni       — Normal / Grass Type"
+  echo "       • Ponytail: Ladder of Laziness, complexity slasher (-N lines)"
   echo "       • Entry: docs/case-studies/04-dietrich-ponytail.md"
   echo "──────────────────────────────────────────────"
   echo "Inspect detailed entries in $SCRIPT_DIR/docs/case-studies/"

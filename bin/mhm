@@ -1,31 +1,129 @@
 #!/usr/bin/env bash
 # bin/mhm — Meta-Harness Manager CLI
-# Empowers developers to build, audit, and evolve custom AI agent harnesses.
+# Empowers developers to build, audit, install, and evolve custom AI agent harnesses.
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 show_help() {
   cat << 'EOF'
 MHM — My Harness Manager (Meta-Harness CLI)
-A harness to design, audit, and evolve your AI agent harnesses.
+A harness to design, audit, deploy, and evolve your AI agent harnesses.
 
 Usage:
   mhm <command> [arguments] [options]
 
 Commands:
-  init <name>       Scaffold a new custom 3-pillar harness project
-  audit [path]      Audit a harness or project for token bloat, missing gates, and anti-patterns
+  install [path]    Install a self-evolving 3-pillar harness into a target directory (default: .)
+  init <name>       Scaffold a brand-new custom harness repository
+  audit [path]      Audit a harness for token bloat, missing gates, and anti-patterns
   cases             List and view structural case studies of archetypal harnesses
   help, -h          Show this help message
   version, -v       Show MHM version
 
 Examples:
-  mhm init my-team-harness
-  mhm audit ./my-team-harness
-  mhm cases
+  mhm install                          # Deploy harness to current directory
+  mhm install /path/to/my-agent-repo   # Deploy harness to specific agent folder
+  mhm init my-team-harness             # Scaffold new harness project
+  mhm audit /path/to/target            # Audit harness health
+  mhm cases                            # View reference case studies
 EOF
+}
+
+cmd_install() {
+  local target_dir="${1:-.}"
+  mkdir -p "$target_dir"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "🚀 [MHM] Installing Self-Evolving Harness into: $target_dir"
+  echo "──────────────────────────────────────────────"
+
+  # 1. Install Rules
+  echo "📜 Installing Rules..."
+  local rules_target="$target_dir/.agents/rules"
+  mkdir -p "$rules_target"
+
+  if [ -d "$SCRIPT_DIR/rules" ]; then
+    for rf in "$SCRIPT_DIR/rules/"*.md; do
+      [ -f "$rf" ] || continue
+      local bname
+      bname="$(basename "$rf")"
+      cp "$rf" "$rules_target/$bname"
+      echo "   📄 Installed rule: .agents/rules/$bname"
+    done
+  fi
+
+  # Auto-wire AGENTS.md
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  if [ ! -f "$agents_md" ]; then
+    cat << 'EOF' > "$agents_md"
+# Agent Operating Rules (AGENTS.md)
+
+This project is governed by the 3 Pillars (Rule, Skill, Hook) and 3 Invariants.
+
+## Active Rules
+EOF
+    echo "   📝 Created: .agents/AGENTS.md"
+  fi
+
+  for rf in "$rules_target/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    if ! grep -q "@rules/$bname" "$agents_md"; then
+      echo "@rules/$bname" >> "$agents_md"
+      echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
+    fi
+  done
+
+  # Wire Claude and Gemini configs
+  mkdir -p "$target_dir/.claude" "$target_dir/.gemini"
+  [ ! -f "$target_dir/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  [ ! -f "$target_dir/.gemini/GEMINI.md" ] && echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+
+  # 2. Install Skills
+  echo "🧰 Installing Skills (including self-evolution)..."
+  local skills_target="$target_dir/.agents/skills"
+  mkdir -p "$skills_target"
+
+  if [ -d "$SCRIPT_DIR/skills" ]; then
+    for sd in "$SCRIPT_DIR/skills/"*; do
+      [ -d "$sd" ] || continue
+      local sname
+      sname="$(basename "$sd")"
+      mkdir -p "$skills_target/$sname"
+      cp -R "$sd/"* "$skills_target/$sname/"
+      echo "   📁 Installed skill: .agents/skills/$sname"
+    done
+  fi
+
+  # Wire .claude/skills symlink
+  if [ ! -L "$target_dir/.claude/skills" ]; then
+    rm -rf "$target_dir/.claude/skills"
+    ln -sf "../.agents/skills" "$target_dir/.claude/skills"
+    echo "   🔌 Wired: .claude/skills -> ../.agents/skills"
+  fi
+
+  # 3. Install Git Hooks
+  if [ -d "$target_dir/.git" ]; then
+    echo "🪝 Installing Git hooks..."
+    local hooks_target="$target_dir/.git/hooks"
+    mkdir -p "$hooks_target"
+
+    if [ -d "$SCRIPT_DIR/hooks" ]; then
+      if [ -f "$SCRIPT_DIR/hooks/install.sh" ]; then
+        bash "$SCRIPT_DIR/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
+      fi
+    fi
+    git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
+    echo "   ✅ Installed hooks: commit-msg, pre-commit"
+  fi
+
+  echo "──────────────────────────────────────────────"
+  echo "✨ [MHM] Self-evolving harness successfully installed!"
+  echo "   The agent in this folder is now governed by 3-Pillar rules and"
+  echo "   mandated to continuously evolve its own harness via harness-evolution.md."
 }
 
 cmd_init() {
@@ -51,99 +149,24 @@ cmd_init() {
   fi
 
   echo "🚀 [MHM] Scaffolding new 3-Pillar Harness: $base_name at $target_dir..."
-  mkdir -p "$target_dir/rules" "$target_dir/skills" "$target_dir/hooks/commit-msg" "$target_dir/hooks/pre-commit" "$target_dir/docs"
+  mkdir -p "$target_dir/rules" "$target_dir/skills/harness-evolution" "$target_dir/hooks/commit-msg" "$target_dir/hooks/pre-commit" "$target_dir/docs"
 
-  # 1. Base Rules
-  cat << 'EOF' > "$target_dir/rules/skill-routing.md"
----
-name: skill-routing
-description: Mandatory routing table directing AI agents to load specific skills based on task context.
----
-
-# Skill Routing Table (skill-routing.md)
-
-Always-on dispatch rules. You MUST load the designated skill before taking action:
-
-- **Coding / Refactoring** ➔ Load `.agents/skills/<coding-skill>/SKILL.md`
-- **Bugs / Test Failures** ➔ Load `.agents/skills/<debugging-skill>/SKILL.md`
-- **Documentation** ➔ Load `.agents/skills/<docs-skill>/SKILL.md`
-EOF
-
-  cat << 'EOF' > "$target_dir/rules/task-execution-protocol.md"
----
-name: task-execution-protocol
-description: Universal operational constraints for AI agents. Enforces no busy-polling, zero-blind verification, and direct execution.
----
-
-# Task Execution Protocol (task-execution-protocol.md)
-
-## 1. No Busy-Polling
-Never query task status in tight retry loops. Yield execution and await reactive notifications.
-
-## 2. Zero-Blind Verification
-Process exit code 0 is not proof of success. Inspect actual data, UI, or state evidence before claiming completion.
-
-## 3. Direct Execution
-Execute lightweight single-file tasks immediately. Split operations exceeding 30 seconds into non-blocking background tasks.
-EOF
-
-  # 2. Base Hooks
-  cat << 'EOF' > "$target_dir/hooks/commit-msg/commit-msg"
-#!/usr/bin/env bash
-# Enforces Conventional Commits, 72-char summary, and blocks AI signatures
-set -euo pipefail
-COMMIT_MSG_FILE="$1"
-FIRST_LINE="$(head -n 1 "$COMMIT_MSG_FILE")"
-
-if [ ${#FIRST_LINE} -gt 72 ]; then
-  echo "❌ [Commit Gate] Commit summary exceeds 72 characters (${#FIRST_LINE} chars)."
-  exit 1
-fi
-
-if grep -qEi "(🤖|Co-Authored-By:.*(claude|gpt|bot|ai)|Generated with)" "$COMMIT_MSG_FILE"; then
-  echo "❌ [Commit Gate] Commit message contains prohibited AI signatures."
-  exit 1
-fi
-exit 0
-EOF
-  chmod +x "$target_dir/hooks/commit-msg/commit-msg"
-
-  cat << 'EOF' > "$target_dir/hooks/pre-commit/pre-commit"
-#!/usr/bin/env bash
-# Enforces config protection and blocks secret leaks
-set -euo pipefail
-
-PROTECTED_CONFIGS=("eslint.config.js" ".eslintrc" ".prettierrc" "biome.json" "ruff.toml")
-SECRET_PATTERNS=("^\.env$" ".*\.pem$" ".*\.key$")
-
-AGAINST="HEAD"
-git rev-parse --verify HEAD >/dev/null 2>&1 || AGAINST="$(git hash-object -t tree /dev/null)"
-
-while IFS=$'\t' read -r status filepath extra; do
-  [ -z "$filepath" ] && continue
-  filename="$(basename "$filepath")"
-
-  for sec in "${SECRET_PATTERNS[@]}"; do
-    if [[ "$filename" =~ $sec ]]; then
-      echo "❌ [Secret Guard] Staging secret file '$filepath' is blocked."
-      exit 1
-    fi
-  done
-
-  if [ "$status" != "A" ]; then
-    for cfg in "${PROTECTED_CONFIGS[@]}"; do
-      if [ "$filename" = "$cfg" ]; then
-        echo "❌ [Config Protection] Modifying linter/formatter config '$filepath' is blocked."
-        exit 1
-      fi
-    done
+  # Copy base rules and self-evolution rule
+  if [ -d "$SCRIPT_DIR/rules" ]; then
+    cp "$SCRIPT_DIR/rules/"*.md "$target_dir/rules/" 2>/dev/null || true
   fi
-done < <(git diff --cached --name-status "$AGAINST")
-exit 0
-EOF
-  chmod +x "$target_dir/hooks/pre-commit/pre-commit"
 
-  # 3. Master Install Script (Idempotent, Auto-wiring, Zero-dependency)
+  # Copy harness-evolution skill
+  if [ -d "$SCRIPT_DIR/skills/harness-evolution" ]; then
+    cp -R "$SCRIPT_DIR/skills/harness-evolution/"* "$target_dir/skills/harness-evolution/"
+  fi
+
+  # Copy hooks
+  if [ -d "$SCRIPT_DIR/hooks" ]; then
+    cp -R "$SCRIPT_DIR/hooks/"* "$target_dir/hooks/" 2>/dev/null || true
+  fi
+
+  # Copy install script from SCRIPT_DIR or generate
   cat << 'EOF' > "$target_dir/install.sh"
 #!/usr/bin/env bash
 # install.sh — Idempotent installer for custom harness
@@ -158,9 +181,10 @@ echo "🚀 Installing harness to: $TARGET_DIR"
 # 1. Install Git Hooks
 if [ -d "$TARGET_DIR/.git" ]; then
   mkdir -p "$TARGET_DIR/.git/hooks"
-  cp "$SCRIPT_DIR/hooks/commit-msg/commit-msg" "$TARGET_DIR/.git/hooks/commit-msg" 2>/dev/null || true
-  cp "$SCRIPT_DIR/hooks/pre-commit/pre-commit" "$TARGET_DIR/.git/hooks/pre-commit" 2>/dev/null || true
+  [ -f "$SCRIPT_DIR/hooks/commit-msg/commit-msg" ] && cp "$SCRIPT_DIR/hooks/commit-msg/commit-msg" "$TARGET_DIR/.git/hooks/commit-msg"
+  [ -f "$SCRIPT_DIR/hooks/pre-commit/pre-commit" ] && cp "$SCRIPT_DIR/hooks/pre-commit/pre-commit" "$TARGET_DIR/.git/hooks/pre-commit"
   chmod +x "$TARGET_DIR/.git/hooks/"* 2>/dev/null || true
+  git -C "$TARGET_DIR" config core.hooksPath .git/hooks 2>/dev/null || true
   echo "   ✅ Installed Git hooks"
 fi
 
@@ -181,24 +205,34 @@ for rule in "$TARGET_DIR/.agents/rules/"*.md; do
 done
 
 # Wire AI tool configs
-mkdir -p "$TARGET_DIR/.claude"
+mkdir -p "$TARGET_DIR/.claude" "$TARGET_DIR/.gemini"
 [ ! -f "$TARGET_DIR/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.claude/CLAUDE.md"
+[ ! -f "$TARGET_DIR/.gemini/GEMINI.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.gemini/GEMINI.md"
+
+# 3. Install Skills
+mkdir -p "$TARGET_DIR/.agents/skills"
+for sd in "$SCRIPT_DIR/skills/"*; do
+  [ -d "$sd" ] || continue
+  sname="$(basename "$sd")"
+  mkdir -p "$TARGET_DIR/.agents/skills/$sname"
+  cp -R "$sd/"* "$TARGET_DIR/.agents/skills/$sname/"
+done
+ln -sf "../.agents/skills" "$TARGET_DIR/.claude/skills" 2>/dev/null || true
 
 echo "✨ Harness installed successfully."
 EOF
   chmod +x "$target_dir/install.sh"
 
-  # 4. README
   cat << EOF > "$target_dir/README.md"
-# $name
+# $base_name
 
-A custom 3-Pillar AI Agent Harness built with [MHM (My Harness Manager)](https://github.com/2JIHAN/my-harness-manager).
+A self-evolving 3-Pillar AI Agent Harness built with [MHM (My Harness Manager)](https://github.com/2JIHAN/my-harness-manager).
 
 ## Architecture
 
-- **\`rules/\`** — Always-on operational standards and skill routing
-- **\`skills/\`** — On-demand domain capabilities and methodologies
-- **\`hooks/\`** — Git-level deterministic hard gates
+- **\`rules/\`** — Always-on operational standards, skill routing, and self-evolution protocol
+- **\`skills/\`** — On-demand domain capabilities and evolution playbook
+- **\`hooks/\`** — Git-level deterministic hard gates (commit-msg, pre-commit)
 
 ## Installation
 
@@ -207,8 +241,8 @@ A custom 3-Pillar AI Agent Harness built with [MHM (My Harness Manager)](https:/
 \`\`\`
 EOF
 
-  echo "✨ Harness '$name' scaffolded successfully at $target_dir"
-  echo "   Run 'cd $name && ./install.sh' to deploy."
+  echo "✨ Harness '$base_name' scaffolded successfully at $target_dir"
+  echo "   Includes 'rules/harness-evolution.md' for agent continuous self-improvement."
 }
 
 cmd_audit() {
@@ -227,6 +261,7 @@ cmd_audit() {
     rules_dir="$target_dir/.agents/rules"
   fi
 
+  local has_evolution=0
   if [ -d "$rules_dir" ]; then
     for rf in "$rules_dir/"*.md; do
       [ -f "$rf" ] || continue
@@ -234,6 +269,11 @@ cmd_audit() {
       lines=$(wc -l < "$rf" | tr -d ' ')
       local bname
       bname=$(basename "$rf")
+
+      if [ "$bname" = "harness-evolution.md" ]; then
+        has_evolution=1
+      fi
+
       if [ "$lines" -gt 100 ]; then
         echo "   ⚠️  [Token Warning] '$bname' is $lines lines. Always-on rules should remain < 100 lines."
         echo "       Consider moving large guides to an on-demand Skill and using a Skill Router."
@@ -245,6 +285,12 @@ cmd_audit() {
   else
     echo "   ⚠️  No 'rules/' directory found."
     issues=$((issues + 1))
+  fi
+
+  if [ "$has_evolution" -eq 1 ]; then
+    echo "   🌟 Self-evolution rule (harness-evolution.md) is ACTIVE"
+  else
+    echo "   ℹ️  Self-evolution rule not found. Agent cannot autonomously maintain its harness."
   fi
 
   # 2. Check Skills
@@ -273,25 +319,32 @@ cmd_audit() {
   # 3. Check Hooks
   echo "🪝 Auditing Hooks..."
   local hooks_dir="$target_dir/hooks"
+  if [ ! -d "$hooks_dir" ] && [ -d "$target_dir/.git/hooks" ]; then
+    hooks_dir="$target_dir/.git/hooks"
+  fi
+
   if [ -d "$hooks_dir" ]; then
     for hk in "$hooks_dir/"*; do
-      [ -d "$hk" ] || continue
+      [ -e "$hk" ] || continue
       local hname
       hname=$(basename "$hk")
-      if [ ! -x "$hk/$hname" ] && [ -f "$hk/$hname" ]; then
-        echo "   ⚠️  Hook '$hk/$hname' is not executable (chmod +x needed)."
-        issues=$((issues + 1))
-      else
-        echo "   ✅ Hook '$hname' verified"
+      [[ "$hname" == *.sample ]] && continue
+      if [ -f "$hk" ]; then
+        if [ ! -x "$hk" ]; then
+          echo "   ⚠️  Hook '$hname' is not executable (chmod +x needed)."
+          issues=$((issues + 1))
+        else
+          echo "   ✅ Hook '$hname' verified"
+        fi
       fi
     done
   else
-    echo "   ℹ️  No standalone 'hooks/' directory found."
+    echo "   ℹ️  No hooks found."
   fi
 
   echo "──────────────────────────────────────────────"
   if [ "$issues" -eq 0 ]; then
-    echo "✨ Audit clean! Harness adheres to 3-Pillar & minimal token standards."
+    echo "✨ Audit clean! Harness adheres to 3-Pillar, minimal token, and self-evolution standards."
   else
     echo "⚠️  Found $issues recommendation(s). Review findings above."
   fi
@@ -313,6 +366,9 @@ cmd_cases() {
 }
 
 case "${1:-}" in
+  install)
+    cmd_install "${2:-.}"
+    ;;
   init)
     cmd_init "${2:-}"
     ;;

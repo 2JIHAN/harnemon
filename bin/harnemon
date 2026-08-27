@@ -45,32 +45,104 @@ EOF
 }
 
 choose_starter_interactive() {
+  local options=(
+    "nimbleet:⚡ Nimbleet [Electric ⚡] — 50-token skill router, ultralight minimal speedster"
+    "fortoise:💧 Fortoise [Water 💧]    — Giant tool fortress, impenetrable config-guard shell"
+    "monkin:🔥 Monkin   [Fire 🔥]     — The Iron Law discipline, burns away guessing with proofs"
+    "yagni:🍃 Yagni    [Grass 🍃]    — Ladder of Laziness, prunes code bloat (-N lines)"
+  )
+  local num_options=${#options[@]}
+  local selected=0
+
+  # Check if interactive terminal available
+  local tty_in="/dev/stdin"
+  if [ -t 0 ] && [ -c /dev/tty ]; then
+    tty_in="/dev/tty"
+  fi
+
+  local ESC=$'\033'
+  local HIDE_CURSOR="${ESC}[?25l"
+  local SHOW_CURSOR="${ESC}[?25h"
+  local BOLD="${ESC}[1m"
+  local CYAN="${ESC}[36m"
+  local DIM="${ESC}[2m"
+  local RESET="${ESC}[0m"
+
+  # Trap cursor restoration on interrupt
+  trap 'printf "%s" "$SHOW_CURSOR" >&2; exit 1' INT TERM
+
+  printf "%s" "$HIDE_CURSOR" >&2
+
   echo "" >&2
   echo "┌──────────────────────────────────────────────────────────────┐" >&2
   echo "│   🌟 Choose Your Starter Harnemon!                           │" >&2
-  echo "│   Pick your autonomous AI companion for this repository.     │" >&2
+  echo "│   Use [↑ / ↓] arrow keys to navigate, [Enter] to adopt.      │" >&2
   echo "└──────────────────────────────────────────────────────────────┘" >&2
   echo "" >&2
-  echo "  1) ⚡ Nimbleet [Electric] 50-token skill router, ultralight minimal speedster" >&2
-  echo "  2) 💧 Fortoise [Water]    Giant tool fortress, impenetrable config-guard shell" >&2
-  echo "  3) 🔥 Monkin   [Fire]     The Iron Law discipline, burns away guesses with root-cause proofs" >&2
-  echo "  4) 🍃 Yagni    [Grass]    Ladder of Laziness, prunes code bloat (-N lines)" >&2
-  echo "" >&2
-  printf "Choose your partner (1-4) [Default: 1 Nimbleet]: " >&2
-  local choice=""
-  if read -r choice; then
-    :
-  else
-    choice="1"
-  fi
-  [ -z "$choice" ] && choice="1"
 
-  case "$choice" in
-    2|fortoise|2|포터스) echo "fortoise" ;;
-    3|monkin|3|몽킨)     echo "monkin" ;;
-    4|yagni|4|야그니)     echo "yagni" ;;
-    1|nimbleet|nimbleet|1|님블릿|*) echo "nimbleet" ;;
-  esac
+  render_starter_menu() {
+    local idx=0
+    for opt in "${options[@]}"; do
+      local label="${opt#*:}"
+      if [ "$idx" -eq "$selected" ]; then
+        printf "%s❯ %s%s\n" "${CYAN}${BOLD}" "$label" "$RESET" >&2
+      else
+        printf "  %s%s%s\n" "$DIM" "$label" "$RESET" >&2
+      fi
+      idx=$((idx + 1))
+    done
+  }
+
+  render_starter_menu
+
+  while true; do
+    local key=""
+    IFS= read -rsn1 key < "$tty_in" || break
+    if [[ "$key" == "$ESC" ]]; then
+      local rest=""
+      read -rsn2 -t 1 rest < "$tty_in" || rest=""
+      key+="$rest"
+    fi
+
+    local move=0
+    case "$key" in
+      $'\033[A'|k|K) # Up
+        if [ "$selected" -gt 0 ]; then
+          selected=$((selected - 1))
+          move=1
+        fi
+        ;;
+      $'\033[B'|j|J) # Down
+        if [ "$selected" -lt $((num_options - 1)) ]; then
+          selected=$((selected + 1))
+          move=1
+        fi
+        ;;
+      "") # Enter
+        break
+        ;;
+      1) selected=0; break ;;
+      2) selected=1; break ;;
+      3) selected=2; break ;;
+      4) selected=3; break ;;
+      q|Q)
+        printf "%s" "$SHOW_CURSOR" >&2
+        echo "Adoption canceled." >&2
+        exit 0
+        ;;
+    esac
+
+    if [ "$move" -eq 1 ]; then
+      printf "\033[%dA" "$num_options" >&2
+      render_starter_menu
+    fi
+  done
+
+  printf "%s" "$SHOW_CURSOR" >&2
+  trap - INT TERM
+
+  local chosen_val="${options[$selected]%%:*}"
+  echo "$chosen_val"
 }
 
 cmd_adopt() {

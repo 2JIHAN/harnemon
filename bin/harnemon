@@ -1,0 +1,387 @@
+#!/usr/bin/env bash
+# bin/harnemon — Harnemon (하네몬) CLI
+# The Pokémon-style Harness Companion System for AI Coding Agents.
+set -euo pipefail
+
+VERSION="0.3.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+show_help() {
+  cat << 'EOF'
+  ⚡ Harnemon (하네몬) ⚡
+  The Pokémon-Style Harness Companion System for AI Coding Agents
+
+Usage:
+  harnemon <command> [arguments] [options]
+
+Commands:
+  feed [path]       Feed a Harness Pill to a folder and awaken a Harnemon (alias: install)
+  dex               Open the Harnedex (하네몬 도감) to inspect legendary archetypes (alias: cases)
+  audit [path]      Diagnose Harnemon health, token bloat, and rule integrity
+  init <name>       Scaffold a new custom Harnemon species repository
+  help, -h          Show this help message
+  version, -v       Show Harnemon version
+
+Examples:
+  harnemon feed                        # Awaken Harnemon in current directory
+  harnemon feed /path/to/my-agent-repo # Awaken Harnemon in specific agent folder
+  harnemon dex                         # View the legendary Harnedex archetypes
+  harnemon audit                       # Health-check current Harnemon
+EOF
+}
+
+cmd_feed() {
+  local target_dir="${1:-.}"
+  mkdir -p "$target_dir"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "⚡ [Harnemon] Feeding Harness Pill into: $target_dir"
+  echo "──────────────────────────────────────────────"
+
+  # 1. Install Rules (Abilities)
+  echo "📜 Bestowing Abilities (Rules)..."
+  local rules_target="$target_dir/.agents/rules"
+  mkdir -p "$rules_target"
+
+  if [ -d "$SCRIPT_DIR/rules" ]; then
+    for rf in "$SCRIPT_DIR/rules/"*.md; do
+      [ -f "$rf" ] || continue
+      local bname
+      bname="$(basename "$rf")"
+      cp "$rf" "$rules_target/$bname"
+      echo "   📄 Installed ability: .agents/rules/$bname"
+    done
+  fi
+
+  # Auto-wire AGENTS.md
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  if [ ! -f "$agents_md" ]; then
+    cat << 'EOF' > "$agents_md"
+# Harnemon Operating Rules (AGENTS.md)
+
+This project is governed by a Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
+
+## Active Abilities (Rules)
+EOF
+    echo "   📝 Created: .agents/AGENTS.md"
+  fi
+
+  for rf in "$rules_target/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    if ! grep -q "@rules/$bname" "$agents_md"; then
+      echo "@rules/$bname" >> "$agents_md"
+      echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
+    fi
+  done
+
+  # Wire Claude and Gemini configs
+  mkdir -p "$target_dir/.claude" "$target_dir/.gemini"
+  [ ! -f "$target_dir/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  [ ! -f "$target_dir/.gemini/GEMINI.md" ] && echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+
+  # 2. Install Skills (Moves)
+  echo "🧰 Imprinting Moves (Skills)..."
+  local skills_target="$target_dir/.agents/skills"
+  mkdir -p "$skills_target"
+
+  if [ -d "$SCRIPT_DIR/skills" ]; then
+    for sd in "$SCRIPT_DIR/skills/"*; do
+      [ -d "$sd" ] || continue
+      local sname
+      sname="$(basename "$sd")"
+      mkdir -p "$skills_target/$sname"
+      cp -R "$sd/"* "$skills_target/$sname/"
+      echo "   📁 Learned move: .agents/skills/$sname"
+    done
+  fi
+
+  # Wire .claude/skills symlink
+  if [ ! -L "$target_dir/.claude/skills" ]; then
+    rm -rf "$target_dir/.claude/skills"
+    ln -sf "../.agents/skills" "$target_dir/.claude/skills"
+    echo "   🔌 Wired: .claude/skills -> ../.agents/skills"
+  fi
+
+  # 3. Install Git Hooks (Held Items)
+  if [ -d "$target_dir/.git" ]; then
+    echo "🪝 Equipping Held Items (Git Hooks)..."
+    local hooks_target="$target_dir/.git/hooks"
+    mkdir -p "$hooks_target"
+
+    if [ -d "$SCRIPT_DIR/hooks" ]; then
+      if [ -f "$SCRIPT_DIR/hooks/install.sh" ]; then
+        bash "$SCRIPT_DIR/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
+      fi
+    fi
+    git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
+    echo "   ✅ Equipped: commit-msg, pre-commit"
+  fi
+
+  echo "──────────────────────────────────────────────"
+  echo "✨ [Harnemon] Harnemon successfully awakened in this folder!"
+  echo "   Equipped with 3 Pillars and the self-evolution ability (harness-evolution.md)."
+  echo "   Train your Harnemon through everyday coding sessions!"
+}
+
+cmd_init() {
+  local name="${1:-}"
+  if [ -z "$name" ]; then
+    echo "❌ Error: Please specify a Harnemon name."
+    echo "   Usage: harnemon init <harness-name>"
+    exit 1
+  fi
+
+  local target_dir
+  if [[ "$name" = /* ]]; then
+    target_dir="$name"
+  else
+    target_dir="./$name"
+  fi
+  local base_name
+  base_name="$(basename "$name")"
+
+  if [ -d "$target_dir" ]; then
+    echo "❌ Error: Directory '$target_dir' already exists."
+    exit 1
+  fi
+
+  echo "🚀 [Harnemon] Breeding new 3-Pillar Harnemon: $base_name at $target_dir..."
+  mkdir -p "$target_dir/rules" "$target_dir/skills/harness-evolution" "$target_dir/hooks/commit-msg" "$target_dir/hooks/pre-commit" "$target_dir/docs"
+
+  if [ -d "$SCRIPT_DIR/rules" ]; then
+    cp "$SCRIPT_DIR/rules/"*.md "$target_dir/rules/" 2>/dev/null || true
+  fi
+
+  if [ -d "$SCRIPT_DIR/skills/harness-evolution" ]; then
+    cp -R "$SCRIPT_DIR/skills/harness-evolution/"* "$target_dir/skills/harness-evolution/"
+  fi
+
+  if [ -d "$SCRIPT_DIR/hooks" ]; then
+    cp -R "$SCRIPT_DIR/hooks/"* "$target_dir/hooks/" 2>/dev/null || true
+  fi
+
+  cat << 'EOF' > "$target_dir/install.sh"
+#!/usr/bin/env bash
+# install.sh — Idempotent installer for Harnemon
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_DIR="${1:-.}"
+TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+
+echo "⚡ Awakening Harnemon in: $TARGET_DIR"
+
+if [ -d "$TARGET_DIR/.git" ]; then
+  mkdir -p "$TARGET_DIR/.git/hooks"
+  [ -f "$SCRIPT_DIR/hooks/commit-msg/commit-msg" ] && cp "$SCRIPT_DIR/hooks/commit-msg/commit-msg" "$TARGET_DIR/.git/hooks/commit-msg"
+  [ -f "$SCRIPT_DIR/hooks/pre-commit/pre-commit" ] && cp "$SCRIPT_DIR/hooks/pre-commit/pre-commit" "$TARGET_DIR/.git/hooks/pre-commit"
+  chmod +x "$TARGET_DIR/.git/hooks/"* 2>/dev/null || true
+  git -C "$TARGET_DIR" config core.hooksPath .git/hooks 2>/dev/null || true
+fi
+
+mkdir -p "$TARGET_DIR/.agents/rules"
+cp "$SCRIPT_DIR/rules/"*.md "$TARGET_DIR/.agents/rules/" 2>/dev/null || true
+
+AGENTS_MD="$TARGET_DIR/.agents/AGENTS.md"
+[ ! -f "$AGENTS_MD" ] && touch "$AGENTS_MD"
+
+for rule in "$TARGET_DIR/.agents/rules/"*.md; do
+  [ -f "$rule" ] || continue
+  base="$(basename "$rule")"
+  if ! grep -q "@rules/$base" "$AGENTS_MD"; then
+    echo "@rules/$base" >> "$AGENTS_MD"
+  fi
+done
+
+mkdir -p "$TARGET_DIR/.claude" "$TARGET_DIR/.gemini"
+[ ! -f "$TARGET_DIR/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.claude/CLAUDE.md"
+[ ! -f "$TARGET_DIR/.gemini/GEMINI.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.gemini/GEMINI.md"
+
+mkdir -p "$TARGET_DIR/.agents/skills"
+for sd in "$SCRIPT_DIR/skills/"*; do
+  [ -d "$sd" ] || continue
+  sname="$(basename "$sd")"
+  mkdir -p "$TARGET_DIR/.agents/skills/$sname"
+  cp -R "$sd/"* "$TARGET_DIR/.agents/skills/$sname/"
+done
+ln -sf "../.agents/skills" "$TARGET_DIR/.claude/skills" 2>/dev/null || true
+
+echo "✨ Harnemon awakened successfully."
+EOF
+  chmod +x "$target_dir/install.sh"
+
+  cat << EOF > "$target_dir/README.md"
+# $base_name
+
+A custom Harnemon species built with [Harnemon (하네몬)](https://github.com/2JIHAN/my-harness-manager).
+
+## Harnemon Spec
+
+- **Abilities (\`rules/\`)** — Operational standards, skill routing, and self-evolution
+- **Moves (\`skills/\`)** — On-demand capabilities and evolution playbook
+- **Held Items (\`hooks/\`)** — Git-level deterministic hard gates
+
+## Feed & Awaken
+
+\`\`\`bash
+./install.sh /path/to/target-project
+\`\`\`
+EOF
+
+  echo "✨ Harnemon '$base_name' bred successfully at $target_dir"
+}
+
+cmd_audit() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "🔍 [Harnemon Health] Diagnosing Harnemon at: $target_dir"
+  echo "──────────────────────────────────────────────"
+
+  local issues=0
+
+  # 1. Check Rules (Abilities)
+  echo "📜 Checking Abilities (Rules)..."
+  local rules_dir="$target_dir/rules"
+  if [ ! -d "$rules_dir" ] && [ -d "$target_dir/.agents/rules" ]; then
+    rules_dir="$target_dir/.agents/rules"
+  fi
+
+  local has_evolution=0
+  if [ -d "$rules_dir" ]; then
+    for rf in "$rules_dir/"*.md; do
+      [ -f "$rf" ] || continue
+      local lines
+      lines=$(wc -l < "$rf" | tr -d ' ')
+      local bname
+      bname=$(basename "$rf")
+
+      if [ "$bname" = "harness-evolution.md" ]; then
+        has_evolution=1
+      fi
+
+      if [ "$lines" -gt 100 ]; then
+        echo "   ⚠️  [Overburdened] '$bname' is $lines lines. Keep abilities < 100 lines."
+        echo "       Consider moving deep moves to an on-demand Skill and using Skill Routing."
+        issues=$((issues + 1))
+      else
+        echo "   ✅ '$bname' ($lines lines) — Healthy size"
+      fi
+    done
+  else
+    echo "   ⚠️  No rules/abilities directory found."
+    issues=$((issues + 1))
+  fi
+
+  if [ "$has_evolution" -eq 1 ]; then
+    echo "   🌟 Self-evolution ability (harness-evolution.md) is ACTIVE"
+  else
+    echo "   ℹ️  Self-evolution ability not found. Harnemon cannot autonomously evolve."
+  fi
+
+  # 2. Check Skills (Moves)
+  echo "🧰 Checking Learned Moves (Skills)..."
+  local skills_dir="$target_dir/skills"
+  if [ ! -d "$skills_dir" ] && [ -d "$target_dir/.agents/skills" ]; then
+    skills_dir="$target_dir/.agents/skills"
+  fi
+
+  if [ -d "$skills_dir" ]; then
+    for sd in "$skills_dir/"*; do
+      [ -d "$sd" ] || continue
+      local sname
+      sname=$(basename "$sd")
+      if [ ! -f "$sd/SKILL.md" ]; then
+        echo "   ❌ '$sname' is missing SKILL.md move definition."
+        issues=$((issues + 1))
+      else
+        echo "   ✅ '$sname/SKILL.md' ready"
+      fi
+    done
+  else
+    echo "   ℹ️  No skills found."
+  fi
+
+  # 3. Check Hooks (Held Items)
+  echo "🪝 Checking Held Items (Hooks)..."
+  local hooks_dir="$target_dir/hooks"
+  if [ ! -d "$hooks_dir" ] && [ -d "$target_dir/.git/hooks" ]; then
+    hooks_dir="$target_dir/.git/hooks"
+  fi
+
+  if [ -d "$hooks_dir" ]; then
+    for hk in "$hooks_dir/"*; do
+      [ -e "$hk" ] || continue
+      local hname
+      hname=$(basename "$hk")
+      [[ "$hname" == *.sample ]] && continue
+      if [ -f "$hk" ]; then
+        if [ ! -x "$hk" ]; then
+          echo "   ⚠️  Held item '$hname' is not equipped (chmod +x needed)."
+          issues=$((issues + 1))
+        else
+          echo "   ✅ Held item '$hname' equipped"
+        fi
+      fi
+    done
+  else
+    echo "   ℹ️  No hooks found."
+  fi
+
+  echo "──────────────────────────────────────────────"
+  if [ "$issues" -eq 0 ]; then
+    echo "✨ Harnemon is in peak condition! 3-Pillar stats and self-evolution verified."
+  else
+    echo "⚠️  Found $issues health check issue(s). Treat with Harnemon recommendations."
+  fi
+}
+
+cmd_dex() {
+  echo "📖 [Harnedex / 하네몬 도감] Legendary Harnemon Archetypes"
+  echo "──────────────────────────────────────────────"
+  echo "No.001 루티스 (Routis)      — 민첩/강철 타입"
+  echo "       • Jihan Harness: 50토큰 스킬 라우터, 제로 디펜던시, 루트 클린"
+  echo "       • Entry: docs/case-studies/01-jihan-harness.md"
+  echo ""
+  echo "No.002 바스티온 (Bastion)    — 바위/드래곤 타입"
+  echo "       • Everything Claude: 288개 기술 장착, 린트 설정 수호(Config Guard)"
+  echo "       • Entry: docs/case-studies/02-everything-claude-code.md"
+  echo ""
+  echo "No.003 아이로닉 (Ironik)     — 격투/에스퍼 타입"
+  echo "       • Superpowers: 철칙(The Iron Law)의 디버깅, TDD 연속 콤보"
+  echo "       • Entry: docs/case-studies/03-obra-superpowers.md"
+  echo ""
+  echo "No.004 야그니 (Yagni)        — 노말/풀 타입"
+  echo "       • Ponytail: 게으름의 사다리, 과잉 엔지니어링 삭제 베기(-N lines)"
+  echo "       • Entry: docs/case-studies/04-dietrich-ponytail.md"
+  echo "──────────────────────────────────────────────"
+  echo "Inspect detailed entries in $SCRIPT_DIR/docs/case-studies/"
+}
+
+case "${1:-}" in
+  feed|install)
+    cmd_feed "${2:-.}"
+    ;;
+  init)
+    cmd_init "${2:-}"
+    ;;
+  audit)
+    cmd_audit "${2:-.}"
+    ;;
+  dex|cases)
+    cmd_dex
+    ;;
+  version|-v)
+    echo "harnemon v$VERSION"
+    ;;
+  help|-h|"")
+    show_help
+    ;;
+  *)
+    echo "❌ Unknown command: $1"
+    show_help
+    exit 1
+    ;;
+esac

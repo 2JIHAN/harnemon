@@ -1,50 +1,95 @@
 #!/usr/bin/env bash
 # bin/harnemon — Harnemon (하네몬) CLI
-# The Pokémon-style Harness Companion System for AI Coding Agents.
+# The Pokémon-style, Zero-Dependency Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.3.0"
+VERSION="0.4.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GLOBAL_HOME="${HOME}/.harnemon"
 
 show_help() {
   cat << 'EOF'
   ⚡ Harnemon (하네몬) ⚡
-  The Pokémon-Style Harness Companion System for AI Coding Agents
+  The Pokémon-Style, Zero-Dependency Harness Companion for AI Coding Agents
 
 Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
-  feed [path]       Feed a Harness Pill to a folder and awaken a Harnemon (alias: install)
-  dex               Open the Harnedex (하네몬 도감) to inspect legendary archetypes (alias: cases)
-  audit [path]      Diagnose Harnemon health, token bloat, and rule integrity
-  init <name>       Scaffold a new custom Harnemon species repository
-  help, -h          Show this help message
-  version, -v       Show Harnemon version
+  feed [--link] [path]  Feed a Harness Pill to a folder (default: current directory)
+                        Options: --link (symlink to global belt, 0 build footprint)
+  link [path]           Roam & link project to global Harnemon (~/.harnemon) with 0 dependencies
+  sync [path]           Cross-pollinate: sync locally learned skills back to global Harnedex
+  dex                   Open the Harnedex (하네몬 도감) to inspect legendary archetypes
+  audit [path]          Diagnose Harnemon health, token bloat, and rule integrity
+  init <name>           Scaffold a new custom Harnemon species repository
+  help, -h              Show this help message
+  version, -v           Show Harnemon version
+
+Zero-Dependency Invariants:
+  • Zero build footprint: Never modifies package.json, pyproject.toml, or Cargo.toml
+  • Pure native: 100% POSIX Bash & Git, runs instantly on any project in any language
+  • Roaming: Links to ~/.harnemon so your Harnemon moves and evolves with you everywhere
 
 Examples:
-  harnemon feed                        # Awaken Harnemon in current directory
-  harnemon feed /path/to/my-agent-repo # Awaken Harnemon in specific agent folder
+  harnemon link                        # Zero-dependency roaming link in current repo
+  harnemon link /path/to/any-repo      # Roam into Rust, Go, Python, or Web projects
+  harnemon feed --link                 # Same as 'harnemon link'
+  harnemon sync                        # Push locally learned skills to global belt
   harnemon dex                         # View the legendary Harnedex archetypes
   harnemon audit                       # Health-check current Harnemon
 EOF
 }
 
 cmd_feed() {
-  local target_dir="${1:-.}"
+  local use_link=false
+  local target_dir=""
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --link|-l)
+        use_link=true
+        shift
+        ;;
+      *)
+        target_dir="$1"
+        shift
+        ;;
+    esac
+  done
+
+  [ -z "$target_dir" ] && target_dir="."
   mkdir -p "$target_dir"
   target_dir="$(cd "$target_dir" && pwd)"
 
-  echo "⚡ [Harnemon] Feeding Harness Pill into: $target_dir"
+  echo "⚡ [Harnemon] Awakening Harnemon in: $target_dir"
+  if [ "$use_link" = true ]; then
+    echo "   🔗 Roaming Mode: Symlinked to global belt ($GLOBAL_HOME) — 0 project dependencies"
+  else
+    echo "   📦 Isolated Mode: Standalone files copied — 0 build footprint"
+  fi
   echo "──────────────────────────────────────────────"
+
+  local base_source="$SCRIPT_DIR"
+  if [ -d "$GLOBAL_HOME" ]; then
+    base_source="$GLOBAL_HOME"
+  fi
 
   # 1. Install Rules (Abilities)
   echo "📜 Bestowing Abilities (Rules)..."
   local rules_target="$target_dir/.agents/rules"
   mkdir -p "$rules_target"
 
-  if [ -d "$SCRIPT_DIR/rules" ]; then
-    for rf in "$SCRIPT_DIR/rules/"*.md; do
+  if [ "$use_link" = true ]; then
+    for rf in "$base_source/rules/"*.md; do
+      [ -f "$rf" ] || continue
+      local bname
+      bname="$(basename "$rf")"
+      ln -sf "$rf" "$rules_target/$bname"
+      echo "   🔗 Linked ability: .agents/rules/$bname -> $rf"
+    done
+  else
+    for rf in "$base_source/rules/"*.md; do
       [ -f "$rf" ] || continue
       local bname
       bname="$(basename "$rf")"
@@ -84,10 +129,14 @@ EOF
   # 2. Install Skills (Moves)
   echo "🧰 Imprinting Moves (Skills)..."
   local skills_target="$target_dir/.agents/skills"
-  mkdir -p "$skills_target"
 
-  if [ -d "$SCRIPT_DIR/skills" ]; then
-    for sd in "$SCRIPT_DIR/skills/"*; do
+  if [ "$use_link" = true ]; then
+    rm -rf "$skills_target"
+    ln -sf "$base_source/skills" "$skills_target"
+    echo "   🔗 Linked moveset: .agents/skills -> $base_source/skills"
+  else
+    mkdir -p "$skills_target"
+    for sd in "$base_source/skills/"*; do
       [ -d "$sd" ] || continue
       local sname
       sname="$(basename "$sd")"
@@ -98,11 +147,9 @@ EOF
   fi
 
   # Wire .claude/skills symlink
-  if [ ! -L "$target_dir/.claude/skills" ]; then
-    rm -rf "$target_dir/.claude/skills"
-    ln -sf "../.agents/skills" "$target_dir/.claude/skills"
-    echo "   🔌 Wired: .claude/skills -> ../.agents/skills"
-  fi
+  rm -rf "$target_dir/.claude/skills"
+  ln -sf "../.agents/skills" "$target_dir/.claude/skills"
+  echo "   🔌 Wired: .claude/skills -> ../.agents/skills"
 
   # 3. Install Git Hooks (Held Items)
   if [ -d "$target_dir/.git" ]; then
@@ -110,19 +157,55 @@ EOF
     local hooks_target="$target_dir/.git/hooks"
     mkdir -p "$hooks_target"
 
-    if [ -d "$SCRIPT_DIR/hooks" ]; then
-      if [ -f "$SCRIPT_DIR/hooks/install.sh" ]; then
-        bash "$SCRIPT_DIR/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
+    if [ -d "$base_source/hooks" ]; then
+      if [ -f "$base_source/hooks/install.sh" ]; then
+        bash "$base_source/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
       fi
     fi
     git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
-    echo "   ✅ Equipped: commit-msg, pre-commit"
+    echo "   ✅ Equipped: commit-msg, pre-commit (Pure Bash, Zero npm/pip/cargo deps)"
   fi
 
   echo "──────────────────────────────────────────────"
   echo "✨ [Harnemon] Harnemon successfully awakened in this folder!"
-  echo "   Equipped with 3 Pillars and the self-evolution ability (harness-evolution.md)."
-  echo "   Train your Harnemon through everyday coding sessions!"
+  echo "   Dependency footprint: 0 bytes. Build tools untouched."
+  if [ "$use_link" = true ]; then
+    echo "   Global belt connected: Any evolution in ~/.harnemon is live immediately."
+  fi
+}
+
+cmd_link() {
+  cmd_feed --link "${1:-.}"
+}
+
+cmd_sync() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "🔄 [Harnemon Cross-Pollination] Syncing skills to global belt..."
+  if [ ! -d "$GLOBAL_HOME/skills" ]; then
+    echo "❌ Error: Global Harnemon home ($GLOBAL_HOME) not found."
+    exit 1
+  fi
+
+  local count=0
+  local local_skills="$target_dir/.agents/skills"
+  if [ -d "$local_skills" ] && [ ! -L "$local_skills" ]; then
+    for sd in "$local_skills/"*; do
+      [ -d "$sd" ] || continue
+      local sname
+      sname="$(basename "$sd")"
+      if [ ! -d "$GLOBAL_HOME/skills/$sname" ]; then
+        echo "   🌟 New move discovered in project: $sname"
+        mkdir -p "$GLOBAL_HOME/skills/$sname"
+        cp -R "$sd/"* "$GLOBAL_HOME/skills/$sname/"
+        count=$((count + 1))
+      fi
+    done
+  fi
+
+  echo "✨ Synced $count new move(s) to global Harnedex ($GLOBAL_HOME/skills)."
+  echo "   All linked projects can now access these moves."
 }
 
 cmd_init() {
@@ -208,7 +291,7 @@ for sd in "$SCRIPT_DIR/skills/"*; do
 done
 ln -sf "../.agents/skills" "$TARGET_DIR/.claude/skills" 2>/dev/null || true
 
-echo "✨ Harnemon awakened successfully."
+echo "✨ Harnemon awakened successfully with ZERO project dependencies."
 EOF
   chmod +x "$target_dir/install.sh"
 
@@ -217,11 +300,11 @@ EOF
 
 A custom Harnemon species built with [Harnemon (하네몬)](https://github.com/2JIHAN/harnemon).
 
-## Harnemon Spec
+## Harnemon Spec (Zero Build Dependencies)
 
 - **Abilities (\`rules/\`)** — Operational standards, skill routing, and self-evolution
 - **Moves (\`skills/\`)** — On-demand capabilities and evolution playbook
-- **Held Items (\`hooks/\`)** — Git-level deterministic hard gates
+- **Held Items (\`hooks/\`)** — Git-level deterministic hard gates (Pure Bash)
 
 ## Feed & Awaken
 
@@ -289,17 +372,21 @@ cmd_audit() {
   fi
 
   if [ -d "$skills_dir" ]; then
-    for sd in "$skills_dir/"*; do
-      [ -d "$sd" ] || continue
-      local sname
-      sname=$(basename "$sd")
-      if [ ! -f "$sd/SKILL.md" ]; then
-        echo "   ❌ '$sname' is missing SKILL.md move definition."
-        issues=$((issues + 1))
-      else
-        echo "   ✅ '$sname/SKILL.md' ready"
-      fi
-    done
+    if [ -L "$skills_dir" ]; then
+      echo "   🔗 Moveset is symlinked to global belt: $(readlink "$skills_dir")"
+    else
+      for sd in "$skills_dir/"*; do
+        [ -d "$sd" ] || continue
+        local sname
+        sname=$(basename "$sd")
+        if [ ! -f "$sd/SKILL.md" ]; then
+          echo "   ❌ '$sname' is missing SKILL.md move definition."
+          issues=$((issues + 1))
+        else
+          echo "   ✅ '$sname/SKILL.md' ready"
+        fi
+      done
+    fi
   else
     echo "   ℹ️  No skills found."
   fi
@@ -361,14 +448,25 @@ cmd_dex() {
 }
 
 case "${1:-}" in
-  feed|install)
-    cmd_feed "${2:-.}"
+  feed)
+    shift
+    cmd_feed "$@"
+    ;;
+  link)
+    shift
+    cmd_link "$@"
+    ;;
+  sync)
+    shift
+    cmd_sync "$@"
     ;;
   init)
-    cmd_init "${2:-}"
+    shift
+    cmd_init "$@"
     ;;
   audit)
-    cmd_audit "${2:-.}"
+    shift
+    cmd_audit "$@"
     ;;
   dex|cases)
     cmd_dex

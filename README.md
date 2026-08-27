@@ -19,7 +19,7 @@
 ```text
        ┌──────────────────────────────────────────────────────────────┐
        │   🌐 GLOBAL HARNEMON (Class / Species)                       │
-       │   ~/.harnemon/ (Numbleet, Fortoise, Monkin, Yagni Blueprints)│
+       │   ~/.harnemon/ (Nimbleet, Fortoise, Monkin, Yagni Blueprints)│
        └──────────────────────────────────────────────────────────────┘
                                       │
                    harnemon adopt     │  (Adoption / Instantiation)
@@ -55,7 +55,7 @@ Harnemon comes equipped with 4 archetypal species inspired by classic Gen-1 Pok�
 
 | No. | Species | Gen-1 Type | Real-World Origin | Signature Trait & Core Moves |
 | :---: | :--- | :--- | :--- | :--- |
-| **No.001** | **[Numbleet](docs/case-studies/01-jihan-harness.md)** | `Electric ⚡` | `2JIHAN/jihan-harness` | **Trait: Lightning Router**<br>Ultra-fast 50-token Skill Router. Lightning-fast response, zero-dependency root-clean agility. |
+| **No.001** | **[Nimbleet](docs/case-studies/01-jihan-harness.md)** | `Electric ⚡` | `2JIHAN/jihan-harness` | **Trait: Lightning Router**<br>Ultra-fast 50-token Skill Router. Lightning-fast response, zero-dependency root-clean agility. |
 | **No.002** | **[Fortoise](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **Trait: Config-Guard Shell**<br>A colossal fortress of 288 moves. Hard-blocks any sneaky attempt by AI to weaken linter/formatter rules. |
 | **No.003** | **[Monkin](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **Trait: The Iron Law Crucible**<br>Practitioner of *The Iron Law*. Burns away guesswork; strictly forbids touching code until root causes are proven. |
 | **No.004** | **[Yagni](docs/case-studies/04-dietrich-ponytail.md)** | `Grass 🍃` | `DietrichGebert/ponytail` | **Trait: Ladder of Laziness**<br>The genius slacker who prunes bloat. Slashes speculative code (`-N lines`), prefers stdlib, and harvests debt. |
@@ -112,7 +112,7 @@ cd /path/to/my-project
 harnemon adopt
 
 # Or directly adopt by species:
-harnemon adopt numbleet   # Electric ⚡ (Fast skill router)
+harnemon adopt nimbleet   # Electric ⚡ (Fast skill router)
 harnemon adopt fortoise   # Water 💧    (Config guardian shell)
 harnemon adopt monkin     # Fire 🔥     (The Iron Law debugging)
 harnemon adopt yagni      # Grass 🍃    (Ladder of Laziness)

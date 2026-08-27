@@ -33,7 +33,7 @@ The comprehensive knowledge base, canonical worldbuilding, and architectural the
 
 ## 3. The Harnedex — Legendary Archetype Analyses
 
-- **[`case-studies/01-jihan-harness.md`](case-studies/01-jihan-harness.md)** — **No.001: Numbleet [Electric ⚡]**
+- **[`case-studies/01-jihan-harness.md`](case-studies/01-jihan-harness.md)** — **No.001: Nimbleet [Electric ⚡]**
   - Archetype: `2JIHAN/jihan-harness` | Ultra-lean 3 pillars, 50-token skill router, zero-dependency agility
 - **[`case-studies/02-everything-claude-code.md`](case-studies/02-everything-claude-code.md)** — **No.002: Fortoise [Water 💧]**
   - Archetype: `affaan-m/everything-claude-code` | 288-move fortress, lifecycle hooks, config-weakening protection

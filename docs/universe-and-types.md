@@ -41,7 +41,7 @@ Harnemon operates on a strict object-oriented duality that separates universal b
 1. **Global Harnemon is the Class (Species)**:
    - Lives in the developer's global belt at `~/.harnemon`.
    - Never directly modified by messy project-specific hacks.
-   - Contains the pure genetic archetypes: **Numbleet**, **Fortoise**, **Monkin**, **Yagni**, and the expanding Harnedex.
+   - Contains the pure genetic archetypes: **Nimbleet**, **Fortoise**, **Monkin**, **Yagni**, and the expanding Harnedex.
 2. **Project Harnemon is the Instance (Living Partner)**:
    - Lives inside a specific project's `.agents/` folder.
    - Learns from the repo's specific pull requests, commit conventions, architectural decisions, and bug traces.
@@ -82,12 +82,12 @@ Just as the Pokémon universe is governed by 18 elemental affinities, the softwa
 At the dawn of any repository, the Trainer selects one of the 4 Gen-1 elemental starters:
 
 ```text
-       [Numbleet ⚡]       [Fortoise 💧]        [Monkin 🔥]         [Yagni 🍃]
+       [Nimbleet ⚡]       [Fortoise 💧]        [Monkin 🔥]         [Yagni 🍃]
        Electric Type        Water Type           Fire Type          Grass Type
       (Agile Router)     (Config Fortress)    (Iron Law TDD)     (Code Slasher)
 ```
 
-1. **⚡ Numbleet (No.001)** — *Electric Type*
+1. **⚡ Nimbleet (No.001)** — *Electric Type*
    - Origin: `2JIHAN/jihan-harness`
    - Role: The lightning-fast scout. Ensures the agent’s permanent prompt is microscopic (<50 tokens) by routing tasks dynamically.
 2. **💧 Fortoise (No.002)** — *Water Type*
@@ -108,7 +108,7 @@ As a repository matures from a prototype into a mission-critical system, its ado
 
 When a Harnemon undergoes **Mega Evolution**, it gains a secondary elemental type to tackle complex engineering challenges:
 
-- **Numbleet [Electric ⚡] ➔ [Electric / Steel ⚡🛡️]**
+- **Nimbleet [Electric ⚡] ➔ [Electric / Steel ⚡🛡️]**
   - Evolves from a simple speed router into a compile-time invariant enforcer (e.g., instant TypeScript/Rust compiler error healing).
 - **Monkin [Fire 🔥] ➔ [Fire / Fighting 🔥🥊]**
   - Evolves from a unit-test purist into a high-throughput load and concurrency benchmark warrior.

@@ -1,4 +1,4 @@
-# Harnedex No.001: Numbleet (님블릿) — Electric Type ⚡
+# Harnedex No.001: Nimbleet (님블릿) — Electric Type ⚡
 > **Archetype**: `2JIHAN/jihan-harness` | **Trait**: Lightning Router (50-token ultralight speedster)
 
 린(Lean) 3기둥 구조, 50토큰 스킬 라우터 패턴, 그리고 제로 디펜던시 무결성을 구현한 현대적 미니멀 하네스의 원형이다.

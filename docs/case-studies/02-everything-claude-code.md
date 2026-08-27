@@ -1,6 +1,7 @@
-# 사례 분석 2: ECC (`affaan-m/everything-claude-code`)
+# Harnedex No.002: Fortoise (포터스) — Water Type 💧
+> **Archetype**: `affaan-m/everything-claude-code` | **Trait**: Config-Guard Shell (288-move fortress)
 
-거대한 기능 스택과 런타임 수명주기 훅(Lifecycle Hooks)을 활용하여 에이전트를 운영체제 수준으로 통제하려는 종합 하네스의 대표 사례다.
+280개가 넘는 스킬과 방대한 도구 생태계를 품고 린트/포맷터 설정을 철벽 방어하는 요새형 하네스의 원형이다.
 
 ---
 

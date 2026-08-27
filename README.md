@@ -19,7 +19,7 @@
 ```text
        ┌──────────────────────────────────────────────────────────────┐
        │   🌐 GLOBAL HARNEMON (Class / Species)                       │
-       │   ~/.harnemon/ (Routis, Bastion, Ironik, Yagni Blueprints)   │
+       │   ~/.harnemon/ (Numbleet, Fortoise, Monkin, Yagni Blueprints)│
        └──────────────────────────────────────────────────────────────┘
                                       │
                    harnemon adopt     │  (Adoption / Instantiation)
@@ -40,7 +40,7 @@ Traditional AI harnesses either copy-paste monolithic prompt blobs across reposi
 
 ### 1. Global Harnemon is a Class (Species)
 - Resides in the developer's global belt at `~/.harnemon`.
-- Just as **Pikachu, Charmander, and Squirtle** represent species blueprints, Global Harnemon holds the pure **DNA (rules, skills, hooks architecture)** unpolluted by any single codebase.
+- Just as **Pikachu, Squirtle, Charmander, and Bulbasaur** represent species blueprints, Global Harnemon holds the pure **DNA (rules, skills, hooks architecture)** unpolluted by any single codebase.
 
 ### 2. Project Harnemon is an Instance ('Ash's Pikachu')
 - Running `harnemon adopt` inside any repository instantiates a **unique, living Harnemon instance** bound to that workspace.
@@ -49,16 +49,16 @@ Traditional AI harnesses either copy-paste monolithic prompt blobs across reposi
 
 ---
 
-## 📖 Harnedex — The 4 Legendary Archetypes
+## 📖 Harnedex — The 4 Legendary Gen-1 Archetypes
 
-Harnemon comes equipped with 4 archetypal species representing distinct software engineering philosophies. Choose the starter that matches your team's mindset:
+Harnemon comes equipped with 4 archetypal species inspired by classic Gen-1 Pokémon starters. Choose the companion that matches your team's engineering mindset:
 
-| No. | Species | Type | Archetype | Signature Trait & Core Moves |
+| No. | Species | Gen-1 Type | Real-World Origin | Signature Trait & Core Moves |
 | :---: | :--- | :--- | :--- | :--- |
-| **No.001** | **[Routis](docs/case-studies/01-jihan-harness.md)** | `Agile / Steel` | `2JIHAN/jihan-harness` | **Trait: Lightweight**<br>Keeps always-on context under 50 tokens with a Skill Router. Slashes overhead with razor-sharp precision. |
-| **No.002** | **[Bastion](docs/case-studies/02-everything-claude-code.md)** | `Rock / Dragon` | `affaan-m/everything-claude-code` | **Trait: Config-Guard**<br>A colossal fortress of 288 moves. Hard-blocks any sneaky attempt by AI to weaken linter/formatter rules. |
-| **No.003** | **[Ironik](docs/case-studies/03-obra-superpowers.md)** | `Fighting / Psychic` | `obra/superpowers` | **Trait: Root-Seeker**<br>Practitioner of *The Iron Law*. Strictly forbids modifying code until the root cause is proven with reproducing tests. |
-| **No.004** | **[Yagni](docs/case-studies/04-dietrich-ponytail.md)** | `Normal / Grass` | `DietrichGebert/ponytail` | **Trait: Ladder of Laziness**<br>The genius sloth who writes the shortest code possible. Slashes speculative bloat (`-N lines`) and tracks shortcut debt. |
+| **No.001** | **[Numbleet](docs/case-studies/01-jihan-harness.md)** | `Electric ⚡` | `2JIHAN/jihan-harness` | **Trait: Lightning Router**<br>Ultra-fast 50-token Skill Router. Lightning-fast response, zero-dependency root-clean agility. |
+| **No.002** | **[Fortoise](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **Trait: Config-Guard Shell**<br>A colossal fortress of 288 moves. Hard-blocks any sneaky attempt by AI to weaken linter/formatter rules. |
+| **No.003** | **[Monkin](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **Trait: The Iron Law Crucible**<br>Practitioner of *The Iron Law*. Burns away guesswork; strictly forbids touching code until root causes are proven. |
+| **No.004** | **[Yagni](docs/case-studies/04-dietrich-ponytail.md)** | `Grass 🍃` | `DietrichGebert/ponytail` | **Trait: Ladder of Laziness**<br>The genius slacker who prunes bloat. Slashes speculative code (`-N lines`), prefers stdlib, and harvests debt. |
 
 ---
 
@@ -112,8 +112,10 @@ cd /path/to/my-project
 harnemon adopt
 
 # Or directly adopt by species:
-harnemon adopt routis    # Agile / Steel
-harnemon adopt yagni     # Normal / Grass
+harnemon adopt numbleet   # Electric ⚡ (Fast skill router)
+harnemon adopt fortoise   # Water 💧    (Config guardian shell)
+harnemon adopt monkin     # Fire 🔥     (The Iron Law debugging)
+harnemon adopt yagni      # Grass 🍃    (Ladder of Laziness)
 ```
 
 ### 3. Inspect Partner Status & Health

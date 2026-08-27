@@ -1,6 +1,7 @@
-# 사례 분석 4: Ponytail (`DietrichGebert/ponytail`)
+# Harnedex No.004: Yagni (야그니) — Grass Type 🍃
+> **Archetype**: `DietrichGebert/ponytail` | **Trait**: Ladder of Laziness (Complexity slasher & pruner)
 
-과잉 엔지니어링을 증오하는 시니어 개발자의 시각에서 AI의 불필요한 코드 생성을 억제하는 미니멀리즘 하네스의 대표 사례다.
+코드베이스의 죽은 가지와 불필요한 의존성을 베어내고 코드를 가장 간결하게 줄여내는 미니멀 다이어트 하네스의 원형이다.
 
 ---
 

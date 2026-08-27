@@ -16,7 +16,7 @@ Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
-  adopt [species] [path]  Adopt a starter Harnemon interactively or by name (1: Routis, 2: Bastion, 3: Ironik, 4: Yagni)
+  adopt [species] [path]  Adopt a starter Harnemon (1: Numbleet ⚡, 2: Fortoise 💧, 3: Monkin 🔥, 4: Yagni 🍃)
   status [path]           Check your adopted partner's profile, abilities, moves, and held items
   feed [--link] [path]    Feed a Harness Pill to awaken a Harnemon in a target folder
   link [path]             Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
@@ -33,9 +33,11 @@ The Pokémon Architecture:
   • Zero Dependencies: 100% POSIX Bash & Git, 0 npm/pip/cargo packages required
 
 Examples:
-  harnemon adopt                       # Interactive starter selection (Routis, Bastion, Ironik, Yagni)
-  harnemon adopt 1                     # Direct adopt: Routis (Agile / Steel)
-  harnemon adopt yagni                 # Direct adopt: Yagni (Normal / Grass)
+  harnemon adopt                       # Interactive starter selection (Numbleet, Fortoise, Monkin, Yagni)
+  harnemon adopt 1                     # Direct adopt: Numbleet (Electric ⚡)
+  harnemon adopt fortoise              # Direct adopt: Fortoise (Water 💧)
+  harnemon adopt monkin                # Direct adopt: Monkin (Fire 🔥)
+  harnemon adopt yagni                 # Direct adopt: Yagni (Grass 🍃)
   harnemon status                      # View current partner's profile and moves
   harnemon audit                       # Health-check your partner
   harnemon dex                         # Browse the 4 legendary Harnemons
@@ -49,12 +51,12 @@ choose_starter_interactive() {
   echo "│   Pick your autonomous AI companion for this repository.     │" >&2
   echo "└──────────────────────────────────────────────────────────────┘" >&2
   echo "" >&2
-  echo "  1) ⚡ Routis   [Agile / Steel]     50-token skill router, ultralight minimal species" >&2
-  echo "  2) 🛡️ Bastion  [Rock / Dragon]     288-move fortress, linter config guardian species" >&2
-  echo "  3) 🥋 Ironik   [Fighting / Psychic] The Iron Law 4-step root-cause debugging species" >&2
-  echo "  4) 🍃 Yagni    [Normal / Grass]    Ladder of Laziness, complexity slasher (-N lines)" >&2
+  echo "  1) ⚡ Numbleet [Electric] 50-token skill router, ultralight minimal speedster" >&2
+  echo "  2) 💧 Fortoise [Water]    Giant tool fortress, impenetrable config-guard shell" >&2
+  echo "  3) 🔥 Monkin   [Fire]     The Iron Law discipline, burns away guesses with root-cause proofs" >&2
+  echo "  4) 🍃 Yagni    [Grass]    Ladder of Laziness, prunes code bloat (-N lines)" >&2
   echo "" >&2
-  printf "Choose your partner (1-4) [Default: 1 Routis]: " >&2
+  printf "Choose your partner (1-4) [Default: 1 Numbleet]: " >&2
   local choice=""
   if read -r choice; then
     :
@@ -64,10 +66,10 @@ choose_starter_interactive() {
   [ -z "$choice" ] && choice="1"
 
   case "$choice" in
-    2|bastion) echo "bastion" ;;
-    3|ironik)  echo "ironik" ;;
-    4|yagni)   echo "yagni" ;;
-    1|routis|*) echo "routis" ;;
+    2|fortoise|2|포터스) echo "fortoise" ;;
+    3|monkin|3|몽킨)     echo "monkin" ;;
+    4|yagni|4|야그니)     echo "yagni" ;;
+    1|numbleet|nimbleet|1|님블릿|*) echo "numbleet" ;;
   esac
 }
 
@@ -77,13 +79,25 @@ cmd_adopt() {
 
   if [ $# -gt 0 ]; then
     case "$1" in
-      routis|bastion|ironik|yagni)
-        species="$1"
+      numbleet|nimbleet)
+        species="numbleet"
         shift
         ;;
-      1) species="routis"; shift ;;
-      2) species="bastion"; shift ;;
-      3) species="ironik"; shift ;;
+      fortoise)
+        species="fortoise"
+        shift
+        ;;
+      monkin)
+        species="monkin"
+        shift
+        ;;
+      yagni)
+        species="yagni"
+        shift
+        ;;
+      1) species="numbleet"; shift ;;
+      2) species="fortoise"; shift ;;
+      3) species="monkin"; shift ;;
       4) species="yagni"; shift ;;
     esac
   fi
@@ -101,25 +115,25 @@ cmd_adopt() {
   local species_desc=""
 
   case "$species" in
-    routis)
-      species_name="Routis"
-      species_type="Agile / Steel"
-      species_desc="50-token skill router, ultralight zero-dependency minimal species"
+    numbleet|nimbleet)
+      species_name="Numbleet"
+      species_type="Electric ⚡"
+      species_desc="50-token skill router, ultralight zero-dependency minimal speedster"
       ;;
-    bastion)
-      species_name="Bastion"
-      species_type="Rock / Dragon"
-      species_desc="Guardian of configs, rigorous lifecycle Git hooks fortress"
+    fortoise)
+      species_name="Fortoise"
+      species_type="Water 💧"
+      species_desc="Impenetrable shell, linter config guardian, lifecycle hooks fortress"
       ;;
-    ironik)
-      species_name="Ironik"
-      species_type="Fighting / Psychic"
-      species_desc="The Iron Law debugging, root-cause investigation discipline"
+    monkin)
+      species_name="Monkin"
+      species_type="Fire 🔥"
+      species_desc="The Iron Law discipline, burns away guessing with root-cause proofs"
       ;;
     yagni)
       species_name="Yagni"
-      species_type="Normal / Grass"
-      species_desc="Ladder of Laziness, slashes unneeded code (-N lines), harvests debt"
+      species_type="Grass 🍃"
+      species_desc="Ladder of Laziness, prunes dead code, slashes complexity (-N lines)"
       ;;
   esac
 
@@ -601,22 +615,22 @@ cmd_audit() {
 }
 
 cmd_dex() {
-  echo "📖 [Harnedex] Legendary Harnemon Archetypes"
+  echo "📖 [Harnedex] Legendary Gen-1 Harnemon Archetypes"
   echo "──────────────────────────────────────────────"
-  echo "No.001 Routis      — Agile / Steel Type"
+  echo "No.001 Numbleet    — Electric Type ⚡"
   echo "       • Jihan Harness: 50-token skill router, zero-dependency root-clean"
   echo "       • Entry: docs/case-studies/01-jihan-harness.md"
   echo ""
-  echo "No.002 Bastion     — Rock / Dragon Type"
-  echo "       • Everything Claude: 288 moves, Config-Guard hard gate"
+  echo "No.002 Fortoise    — Water Type 💧"
+  echo "       • Everything Claude: 288 moves, Config-Guard hard gate shell"
   echo "       • Entry: docs/case-studies/02-everything-claude-code.md"
   echo ""
-  echo "No.003 Ironik      — Fighting / Psychic Type"
-  echo "       • Superpowers: The Iron Law debugging, rigorous TDD combo"
+  echo "No.003 Monkin      — Fire Type 🔥"
+  echo "       • Superpowers: The Iron Law discipline, rigorous TDD crucible"
   echo "       • Entry: docs/case-studies/03-obra-superpowers.md"
   echo ""
-  echo "No.004 Yagni       — Normal / Grass Type"
-  echo "       • Ponytail: Ladder of Laziness, complexity slasher (-N lines)"
+  echo "No.004 Yagni       — Grass Type 🍃"
+  echo "       • Ponytail: Ladder of Laziness, complexity pruning (-N lines)"
   echo "       • Entry: docs/case-studies/04-dietrich-ponytail.md"
   echo "──────────────────────────────────────────────"
   echo "Inspect detailed entries in $SCRIPT_DIR/docs/case-studies/"

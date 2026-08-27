@@ -1,6 +1,7 @@
-# 사례 분석 3: Superpowers (`obra/superpowers`)
+# Harnedex No.003: Monkin (몽킨) — Fire Type 🔥
+> **Archetype**: `obra/superpowers` | **Trait**: The Iron Law Crucible (Strict 4-step debugging)
 
-엄격한 철칙(Iron Law)과 절차적 규율을 통해 AI의 성급한 추측 코딩을 원천 차단하는 태스크 프레임워크의 대표 사례다.
+증상 땜질을 불태우고 오직 근본 원인 규명과 재현 테스트 통과만을 허용하는 엄격한 수련형 하네스의 원형이다.
 
 ---
 

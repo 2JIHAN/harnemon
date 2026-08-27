@@ -430,6 +430,30 @@ EOF
     fi
     git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
     echo "   ✅ Equipped: commit-msg, pre-commit (Pure Bash, Zero npm/pip/cargo deps)"
+
+    # 4. Protect personal companion in .gitignore
+    echo "🛡️ Securing Personal Harnemon in .gitignore..."
+    local gitignore="$target_dir/.gitignore"
+    [ ! -f "$gitignore" ] && touch "$gitignore"
+
+    local entries=(".agents/" ".claude/" ".gemini/")
+    local added=0
+    for entry in "${entries[@]}"; do
+      if ! grep -q "^${entry}" "$gitignore" 2>/dev/null; then
+        if [ "$added" -eq 0 ] && ! grep -q "# Harnemon Personal Companion" "$gitignore" 2>/dev/null; then
+          [ -s "$gitignore" ] && echo "" >> "$gitignore"
+          echo "# Harnemon Personal Companion" >> "$gitignore"
+        fi
+        echo "$entry" >> "$gitignore"
+        added=$((added + 1))
+      fi
+    done
+
+    if [ "$added" -gt 0 ]; then
+      echo "   🛡️ Protected: .agents/, .claude/, .gemini/ added to .gitignore"
+    else
+      echo "   🛡️ Protected: Personal Harnemon already excluded in .gitignore"
+    fi
   fi
 
   echo "──────────────────────────────────────────────"

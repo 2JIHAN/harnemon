@@ -53,8 +53,10 @@ When the user gives the same architectural guidance or correction twice:
 3. **Confirm with User**:
    - Present the exact location and 1-line summary of what will be added.
    - Request approval before writing.
-4. **Deploy & Wire**:
-   - Run the harness installer (`./install.sh` or `mhm audit`) to ensure auto-wiring into `.agents/AGENTS.md` remains intact.
+4. **Deploy, Index & Wire**:
+   - Write `skills/<name>/SKILL.md` (with complete YAML frontmatter).
+   - Append 1 line to `skills/INDEX.md` catalog (name, trigger, description) to eliminate dark skills.
+   - Ensure auto-wiring in `AGENTS.md` and `CLAUDE.md` remains intact.
 
 ---
 

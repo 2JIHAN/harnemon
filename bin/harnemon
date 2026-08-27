@@ -224,19 +224,30 @@ cmd_status() {
 
   echo "⚡ [Harnemon Status] Inspecting Partner at: $target_dir"
   echo "──────────────────────────────────────────────"
-  if [ -f "$target_dir/.agents/partner.json" ]; then
+  local partner_file=""
+  if [ -f "$target_dir/.harnemons/partner.json" ]; then
+    partner_file="$target_dir/.harnemons/partner.json"
+  elif [ -f "$target_dir/.agents/partner.json" ]; then
+    partner_file="$target_dir/.agents/partner.json"
+  fi
+
+  local species="nimbleet"
+  if [ -n "$partner_file" ]; then
     local p_name p_type p_desc
-    p_name=$(grep -o '"name": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
-    p_type=$(grep -o '"type": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
-    p_desc=$(grep -o '"description": "[^"]*' "$target_dir/.agents/partner.json" | head -n 1 | cut -d'"' -f4)
+    species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    p_name=$(grep -o '"name": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    p_type=$(grep -o '"type": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    p_desc=$(grep -o '"description": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
     echo "🐾 Partner: $p_name [$p_type]"
     echo "   Trait:   $p_desc"
+    [ -d "$target_dir/.harnemons/$species" ] && echo "   Home:    .harnemons/$species/"
   else
     echo "🐾 Partner: Standard Harnemon"
   fi
   echo "──────────────────────────────────────────────"
 
-  local rules_dir="$target_dir/.agents/rules"
+  local rules_dir="$target_dir/.harnemons/$species/rules"
+  [ ! -d "$rules_dir" ] && rules_dir="$target_dir/.agents/rules"
   if [ -d "$rules_dir" ]; then
     echo "📜 Active Abilities (Rules):"
     for r in "$rules_dir/"*.md; do
@@ -247,13 +258,17 @@ cmd_status() {
     echo "📜 Abilities: None"
   fi
 
-  local skills_dir="$target_dir/.agents/skills"
+  local skills_dir="$target_dir/.harnemons/$species/skills"
+  [ ! -d "$skills_dir" ] && skills_dir="$target_dir/.agents/skills"
   if [ -d "$skills_dir" ]; then
     echo "🧰 Learned Moves (Skills):"
     for s in "$skills_dir/"*; do
       [ -d "$s" ] || continue
       echo "   • $(basename "$s")"
     done
+    if [ -f "$skills_dir/INDEX.md" ]; then
+      echo "   📋 Catalog: Active (.harnemons/$species/skills/INDEX.md)"
+    fi
   else
     echo "🧰 Moves: None"
   fi
@@ -278,10 +293,11 @@ cmd_status() {
 cmd_feed() {
   local use_link=false
   local target_dir=""
-  local p_species="standard"
-  local p_name="Harnemon"
-  local p_type="Normal"
-  local p_desc="Standard Harnemon equipped with 3 Pillars and self-evolution"
+  local p_species="nimbleet"
+  local p_name="Nimbleet"
+  local p_type="Electric ⚡"
+  local p_desc="50-token skill router, ultralight zero-dependency minimal speedster"
+  local arg_idx=0
 
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -290,17 +306,14 @@ cmd_feed() {
         shift
         ;;
       *)
-        if [ -z "$target_dir" ]; then
-          target_dir="$1"
-        elif [ "$p_species" = "standard" ]; then
-          p_species="$1"
-        elif [ "$p_name" = "Harnemon" ]; then
-          p_name="$1"
-        elif [ "$p_type" = "Normal" ]; then
-          p_type="$1"
-        elif [ "$p_desc" = "Standard Harnemon equipped with 3 Pillars and self-evolution" ]; then
-          p_desc="$1"
-        fi
+        case "$arg_idx" in
+          0) target_dir="$1" ;;
+          1) p_species="$1" ;;
+          2) p_name="$1" ;;
+          3) p_type="$1" ;;
+          4) p_desc="$1" ;;
+        esac
+        arg_idx=$((arg_idx + 1))
         shift
         ;;
     esac
@@ -311,11 +324,7 @@ cmd_feed() {
   target_dir="$(cd "$target_dir" && pwd)"
 
   echo "⚡ [Harnemon] Awakening Harnemon in: $target_dir"
-  if [ "$use_link" = true ]; then
-    echo "   🔗 Roaming Mode: Symlinked to global belt ($GLOBAL_HOME) — 0 project dependencies"
-  else
-    echo "   📦 Isolated Mode: Standalone files copied — 0 build footprint"
-  fi
+  echo "   🐾 Adopted Instance Mode: .harnemons/$p_species/ (100% Isolated & Clean)"
   echo "──────────────────────────────────────────────"
 
   local base_source="$SCRIPT_DIR"
@@ -323,32 +332,14 @@ cmd_feed() {
     base_source="$GLOBAL_HOME"
   fi
 
-  # 1. Install Rules (Abilities)
-  echo "📜 Bestowing Abilities (Rules)..."
-  local rules_target="$target_dir/.agents/rules"
-  mkdir -p "$rules_target"
+  # 1. Create .harnemons directory and species subfolder
+  local harnemons_dir="$target_dir/.harnemons"
+  mkdir -p "$harnemons_dir"
+  local species_dir="$harnemons_dir/$p_species"
+  mkdir -p "$species_dir"
 
-  if [ "$use_link" = true ]; then
-    for rf in "$base_source/rules/"*.md; do
-      [ -f "$rf" ] || continue
-      local bname
-      bname="$(basename "$rf")"
-      ln -sf "$rf" "$rules_target/$bname"
-      echo "   🔗 Linked ability: .agents/rules/$bname -> $rf"
-    done
-  else
-    for rf in "$base_source/rules/"*.md; do
-      [ -f "$rf" ] || continue
-      local bname
-      bname="$(basename "$rf")"
-      [ -L "$rules_target/$bname" ] && rm -f "$rules_target/$bname"
-      cp "$rf" "$rules_target/$bname"
-      echo "   📄 Installed ability: .agents/rules/$bname"
-    done
-  fi
-
-  # Save partner profile
-  cat << EOF > "$target_dir/.agents/partner.json"
+  # Save partner.json directly under .harnemons/
+  cat << EOF > "$harnemons_dir/partner.json"
 {
   "species": "$p_species",
   "name": "$p_name",
@@ -358,72 +349,45 @@ cmd_feed() {
 }
 EOF
 
-  # Auto-wire AGENTS.md
-  local agents_md="$target_dir/.agents/AGENTS.md"
-  if [ ! -f "$agents_md" ]; then
-    cat << EOF > "$agents_md"
-# Harnemon Operating Rules (AGENTS.md)
-
-**Partner**: $p_name [$p_type]
-**Description**: $p_desc
-
-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
-
-## Active Abilities (Rules)
-EOF
-    echo "   📝 Created: .agents/AGENTS.md"
-  fi
-
-  for rf in "$rules_target/"*.md; do
+  # 2. Put abilities (rules) under .harnemons/<species>/rules
+  echo "📜 Bestowing Abilities (Rules)..."
+  local rules_target="$species_dir/rules"
+  mkdir -p "$rules_target"
+  for rf in "$base_source/rules/"*.md; do
     [ -f "$rf" ] || continue
     local bname
     bname="$(basename "$rf")"
-    if ! grep -q "@rules/$bname" "$agents_md"; then
-      echo "@rules/$bname" >> "$agents_md"
-      echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
-    fi
+    cp "$rf" "$rules_target/$bname"
+    echo "   📄 Installed ability: .harnemons/$p_species/rules/$bname"
   done
 
-  # Wire Claude and Gemini configs
-  mkdir -p "$target_dir/.claude" "$target_dir/.gemini"
-  [ ! -f "$target_dir/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
-  [ ! -f "$target_dir/.gemini/GEMINI.md" ] && echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
-
-  # 2. Install Skills (Moves)
+  # 3. Put moves (skills) under .harnemons/<species>/skills (including INDEX.md!)
   echo "🧰 Imprinting Moves (Skills)..."
-  local skills_target="$target_dir/.agents/skills"
-
-  if [ "$use_link" = true ]; then
-    rm -rf "$skills_target"
-    ln -sf "$base_source/skills" "$skills_target"
-    echo "   🔗 Linked moveset: .agents/skills -> $base_source/skills"
-  else
-    if [ -L "$skills_target" ]; then
-      rm -rf "$skills_target"
-    fi
-    mkdir -p "$skills_target"
-    for sd in "$base_source/skills/"*; do
-      [ -d "$sd" ] || continue
-      local sname
-      sname="$(basename "$sd")"
+  local skills_target="$species_dir/skills"
+  mkdir -p "$skills_target"
+  for sd in "$base_source/skills/"*; do
+    local sname
+    sname="$(basename "$sd")"
+    if [ -d "$sd" ]; then
       mkdir -p "$skills_target/$sname"
       cp -R "$sd/"* "$skills_target/$sname/"
-      echo "   📁 Learned move: .agents/skills/$sname"
-    done
+      echo "   📁 Learned move: .harnemons/$p_species/skills/$sname"
+    elif [ -f "$sd" ]; then
+      cp "$sd" "$skills_target/$sname"
+    fi
+  done
+  if [ -f "$base_source/skills/INDEX.md" ]; then
+    cp "$base_source/skills/INDEX.md" "$skills_target/INDEX.md"
+    echo "   📋 Indexed catalog: .harnemons/$p_species/skills/INDEX.md"
   fi
 
-  # Wire .claude/skills symlink
-  rm -rf "$target_dir/.claude/skills"
-  ln -sf "../.agents/skills" "$target_dir/.claude/skills"
-  echo "   🔌 Wired: .claude/skills -> ../.agents/skills"
-
-  # 3. Install Git Hooks (Held Items)
+  # 4. Install Git Hooks (Held Items) & .gitignore
   if [ -d "$target_dir/.git" ]; then
     echo "🪝 Equipping Held Items (Git Hooks)..."
-    local hooks_target="$target_dir/.git/hooks"
-    mkdir -p "$hooks_target"
-
+    local hooks_copy="$species_dir/hooks"
+    mkdir -p "$hooks_copy"
     if [ -d "$base_source/hooks" ]; then
+      cp -R "$base_source/hooks/"* "$hooks_copy/" 2>/dev/null || true
       if [ -f "$base_source/hooks/install.sh" ]; then
         bash "$base_source/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
       fi
@@ -431,12 +395,11 @@ EOF
     git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
     echo "   ✅ Equipped: commit-msg, pre-commit (Pure Bash, Zero npm/pip/cargo deps)"
 
-    # 4. Protect personal companion in .gitignore
     echo "🛡️ Securing Personal Harnemon in .gitignore..."
     local gitignore="$target_dir/.gitignore"
     [ ! -f "$gitignore" ] && touch "$gitignore"
 
-    local entries=(".agents/" ".claude/" ".gemini/")
+    local entries=(".harnemons/" ".claude/" ".gemini/" ".agents/")
     local added=0
     for entry in "${entries[@]}"; do
       if ! grep -q "^${entry}" "$gitignore" 2>/dev/null; then
@@ -450,18 +413,63 @@ EOF
     done
 
     if [ "$added" -gt 0 ]; then
-      echo "   🛡️ Protected: .agents/, .claude/, .gemini/ added to .gitignore"
+      echo "   🛡️ Protected: .harnemons/ added to .gitignore"
     else
-      echo "   🛡️ Protected: Personal Harnemon already excluded in .gitignore"
+      echo "   🛡️ Protected: .harnemons/ already excluded in .gitignore"
     fi
   fi
 
+  # 5. Wire AI Providers (.agents/, .claude/, .gemini/)
+  echo "🔌 Wiring AI Providers (.agents/, .claude/, .gemini/)..."
+  mkdir -p "$target_dir/.agents" "$target_dir/.claude" "$target_dir/.gemini"
+
+  # Symlink .agents/skills -> ../.harnemons/<species>/skills
+  rm -rf "$target_dir/.agents/skills"
+  ln -sf "../.harnemons/$p_species/skills" "$target_dir/.agents/skills"
+  echo "   🔌 Wired: .agents/skills -> ../.harnemons/$p_species/skills"
+
+  # Symlink .claude/skills -> ../.harnemons/<species>/skills (Claude Code Native Discovery)
+  rm -rf "$target_dir/.claude/skills"
+  ln -sf "../.harnemons/$p_species/skills" "$target_dir/.claude/skills"
+  echo "   🔌 Wired: .claude/skills -> ../.harnemons/$p_species/skills (Claude Code Native Scan)"
+
+  # Auto-wire AGENTS.md
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  cat << EOF > "$agents_md"
+# Harnemon Operating Rules (AGENTS.md)
+
+**Partner**: $p_name [$p_type]
+**Species**: $p_species
+**Description**: $p_desc
+
+This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
+
+## Active Abilities (Rules)
+EOF
+  for rf in "$rules_target/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    echo "@../.harnemons/$p_species/rules/$bname" >> "$agents_md"
+    echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
+  done
+
+  cat << EOF >> "$agents_md"
+
+## Learned Moves (Skills Catalog)
+@../.harnemons/$p_species/skills/INDEX.md
+EOF
+  echo "   📋 Wired 'skills/INDEX.md' into .agents/AGENTS.md"
+
+  # Wire Claude and Gemini configs
+  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+  echo "   🔌 Wired: .claude/CLAUDE.md & .gemini/GEMINI.md -> .agents/AGENTS.md"
+
   echo "──────────────────────────────────────────────"
   echo "✨ [Harnemon] $p_name successfully awakened in this folder!"
+  echo "   Harnemon Home: .harnemons/$p_species/"
   echo "   Dependency footprint: 0 bytes. Build tools untouched."
-  if [ "$use_link" = true ]; then
-    echo "   Global belt connected: Any evolution in ~/.harnemon is live immediately."
-  fi
 }
 
 cmd_link() {
@@ -618,8 +626,14 @@ cmd_audit() {
   # 1. Check Rules (Abilities)
   echo "📜 Checking Abilities (Rules)..."
   local rules_dir="$target_dir/rules"
-  if [ ! -d "$rules_dir" ] && [ -d "$target_dir/.agents/rules" ]; then
-    rules_dir="$target_dir/.agents/rules"
+  if [ ! -d "$rules_dir" ]; then
+    local h_rules
+    h_rules="$(find "$target_dir/.harnemons" -maxdepth 2 -type d -name "rules" 2>/dev/null | head -n 1 || true)"
+    if [ -n "$h_rules" ] && [ -d "$h_rules" ]; then
+      rules_dir="$h_rules"
+    elif [ -d "$target_dir/.agents/rules" ]; then
+      rules_dir="$target_dir/.agents/rules"
+    fi
   fi
 
   local has_evolution=0
@@ -657,8 +671,14 @@ cmd_audit() {
   # 2. Check Skills (Moves)
   echo "🧰 Checking Learned Moves (Skills)..."
   local skills_dir="$target_dir/skills"
-  if [ ! -d "$skills_dir" ] && [ -d "$target_dir/.agents/skills" ]; then
-    skills_dir="$target_dir/.agents/skills"
+  if [ ! -d "$skills_dir" ]; then
+    local h_skills
+    h_skills="$(find "$target_dir/.harnemons" -maxdepth 2 -type d -name "skills" 2>/dev/null | head -n 1 || true)"
+    if [ -n "$h_skills" ] && [ -d "$h_skills" ]; then
+      skills_dir="$h_skills"
+    elif [ -d "$target_dir/.agents/skills" ]; then
+      skills_dir="$target_dir/.agents/skills"
+    fi
   fi
 
   if [ -d "$skills_dir" ]; then

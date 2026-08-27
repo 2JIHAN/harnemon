@@ -215,7 +215,7 @@ EOF
   cat << EOF > "$target_dir/README.md"
 # $base_name
 
-A custom Harnemon species built with [Harnemon (하네몬)](https://github.com/2JIHAN/my-harness-manager).
+A custom Harnemon species built with [Harnemon (하네몬)](https://github.com/2JIHAN/harnemon).
 
 ## Harnemon Spec
 

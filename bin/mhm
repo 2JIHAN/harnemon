@@ -1,0 +1,336 @@
+#!/usr/bin/env bash
+# bin/mhm — Meta-Harness Manager CLI
+# Empowers developers to build, audit, and evolve custom AI agent harnesses.
+set -euo pipefail
+
+VERSION="0.1.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+show_help() {
+  cat << 'EOF'
+MHM — My Harness Manager (Meta-Harness CLI)
+A harness to design, audit, and evolve your AI agent harnesses.
+
+Usage:
+  mhm <command> [arguments] [options]
+
+Commands:
+  init <name>       Scaffold a new custom 3-pillar harness project
+  audit [path]      Audit a harness or project for token bloat, missing gates, and anti-patterns
+  cases             List and view structural case studies of archetypal harnesses
+  help, -h          Show this help message
+  version, -v       Show MHM version
+
+Examples:
+  mhm init my-team-harness
+  mhm audit ./my-team-harness
+  mhm cases
+EOF
+}
+
+cmd_init() {
+  local name="${1:-}"
+  if [ -z "$name" ]; then
+    echo "❌ Error: Please specify a harness name."
+    echo "   Usage: mhm init <harness-name>"
+    exit 1
+  fi
+
+  local target_dir
+  if [[ "$name" = /* ]]; then
+    target_dir="$name"
+  else
+    target_dir="./$name"
+  fi
+  local base_name
+  base_name="$(basename "$name")"
+
+  if [ -d "$target_dir" ]; then
+    echo "❌ Error: Directory '$target_dir' already exists."
+    exit 1
+  fi
+
+  echo "🚀 [MHM] Scaffolding new 3-Pillar Harness: $base_name at $target_dir..."
+  mkdir -p "$target_dir/rules" "$target_dir/skills" "$target_dir/hooks/commit-msg" "$target_dir/hooks/pre-commit" "$target_dir/docs"
+
+  # 1. Base Rules
+  cat << 'EOF' > "$target_dir/rules/skill-routing.md"
+---
+name: skill-routing
+description: Mandatory routing table directing AI agents to load specific skills based on task context.
+---
+
+# Skill Routing Table (skill-routing.md)
+
+Always-on dispatch rules. You MUST load the designated skill before taking action:
+
+- **Coding / Refactoring** ➔ Load `.agents/skills/<coding-skill>/SKILL.md`
+- **Bugs / Test Failures** ➔ Load `.agents/skills/<debugging-skill>/SKILL.md`
+- **Documentation** ➔ Load `.agents/skills/<docs-skill>/SKILL.md`
+EOF
+
+  cat << 'EOF' > "$target_dir/rules/task-execution-protocol.md"
+---
+name: task-execution-protocol
+description: Universal operational constraints for AI agents. Enforces no busy-polling, zero-blind verification, and direct execution.
+---
+
+# Task Execution Protocol (task-execution-protocol.md)
+
+## 1. No Busy-Polling
+Never query task status in tight retry loops. Yield execution and await reactive notifications.
+
+## 2. Zero-Blind Verification
+Process exit code 0 is not proof of success. Inspect actual data, UI, or state evidence before claiming completion.
+
+## 3. Direct Execution
+Execute lightweight single-file tasks immediately. Split operations exceeding 30 seconds into non-blocking background tasks.
+EOF
+
+  # 2. Base Hooks
+  cat << 'EOF' > "$target_dir/hooks/commit-msg/commit-msg"
+#!/usr/bin/env bash
+# Enforces Conventional Commits, 72-char summary, and blocks AI signatures
+set -euo pipefail
+COMMIT_MSG_FILE="$1"
+FIRST_LINE="$(head -n 1 "$COMMIT_MSG_FILE")"
+
+if [ ${#FIRST_LINE} -gt 72 ]; then
+  echo "❌ [Commit Gate] Commit summary exceeds 72 characters (${#FIRST_LINE} chars)."
+  exit 1
+fi
+
+if grep -qEi "(🤖|Co-Authored-By:.*(claude|gpt|bot|ai)|Generated with)" "$COMMIT_MSG_FILE"; then
+  echo "❌ [Commit Gate] Commit message contains prohibited AI signatures."
+  exit 1
+fi
+exit 0
+EOF
+  chmod +x "$target_dir/hooks/commit-msg/commit-msg"
+
+  cat << 'EOF' > "$target_dir/hooks/pre-commit/pre-commit"
+#!/usr/bin/env bash
+# Enforces config protection and blocks secret leaks
+set -euo pipefail
+
+PROTECTED_CONFIGS=("eslint.config.js" ".eslintrc" ".prettierrc" "biome.json" "ruff.toml")
+SECRET_PATTERNS=("^\.env$" ".*\.pem$" ".*\.key$")
+
+AGAINST="HEAD"
+git rev-parse --verify HEAD >/dev/null 2>&1 || AGAINST="$(git hash-object -t tree /dev/null)"
+
+while IFS=$'\t' read -r status filepath extra; do
+  [ -z "$filepath" ] && continue
+  filename="$(basename "$filepath")"
+
+  for sec in "${SECRET_PATTERNS[@]}"; do
+    if [[ "$filename" =~ $sec ]]; then
+      echo "❌ [Secret Guard] Staging secret file '$filepath' is blocked."
+      exit 1
+    fi
+  done
+
+  if [ "$status" != "A" ]; then
+    for cfg in "${PROTECTED_CONFIGS[@]}"; do
+      if [ "$filename" = "$cfg" ]; then
+        echo "❌ [Config Protection] Modifying linter/formatter config '$filepath' is blocked."
+        exit 1
+      fi
+    done
+  fi
+done < <(git diff --cached --name-status "$AGAINST")
+exit 0
+EOF
+  chmod +x "$target_dir/hooks/pre-commit/pre-commit"
+
+  # 3. Master Install Script (Idempotent, Auto-wiring, Zero-dependency)
+  cat << 'EOF' > "$target_dir/install.sh"
+#!/usr/bin/env bash
+# install.sh — Idempotent installer for custom harness
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_DIR="${1:-.}"
+TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+
+echo "🚀 Installing harness to: $TARGET_DIR"
+
+# 1. Install Git Hooks
+if [ -d "$TARGET_DIR/.git" ]; then
+  mkdir -p "$TARGET_DIR/.git/hooks"
+  cp "$SCRIPT_DIR/hooks/commit-msg/commit-msg" "$TARGET_DIR/.git/hooks/commit-msg" 2>/dev/null || true
+  cp "$SCRIPT_DIR/hooks/pre-commit/pre-commit" "$TARGET_DIR/.git/hooks/pre-commit" 2>/dev/null || true
+  chmod +x "$TARGET_DIR/.git/hooks/"* 2>/dev/null || true
+  echo "   ✅ Installed Git hooks"
+fi
+
+# 2. Install Rules
+mkdir -p "$TARGET_DIR/.agents/rules"
+cp "$SCRIPT_DIR/rules/"*.md "$TARGET_DIR/.agents/rules/" 2>/dev/null || true
+
+# Auto-wire AGENTS.md
+AGENTS_MD="$TARGET_DIR/.agents/AGENTS.md"
+[ ! -f "$AGENTS_MD" ] && touch "$AGENTS_MD"
+
+for rule in "$TARGET_DIR/.agents/rules/"*.md; do
+  [ -f "$rule" ] || continue
+  base="$(basename "$rule")"
+  if ! grep -q "@rules/$base" "$AGENTS_MD"; then
+    echo "@rules/$base" >> "$AGENTS_MD"
+  fi
+done
+
+# Wire AI tool configs
+mkdir -p "$TARGET_DIR/.claude"
+[ ! -f "$TARGET_DIR/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.claude/CLAUDE.md"
+
+echo "✨ Harness installed successfully."
+EOF
+  chmod +x "$target_dir/install.sh"
+
+  # 4. README
+  cat << EOF > "$target_dir/README.md"
+# $name
+
+A custom 3-Pillar AI Agent Harness built with [MHM (My Harness Manager)](https://github.com/2JIHAN/my-harness-manager).
+
+## Architecture
+
+- **\`rules/\`** — Always-on operational standards and skill routing
+- **\`skills/\`** — On-demand domain capabilities and methodologies
+- **\`hooks/\`** — Git-level deterministic hard gates
+
+## Installation
+
+\`\`\`bash
+./install.sh /path/to/target-project
+\`\`\`
+EOF
+
+  echo "✨ Harness '$name' scaffolded successfully at $target_dir"
+  echo "   Run 'cd $name && ./install.sh' to deploy."
+}
+
+cmd_audit() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "🔍 [MHM Audit] Auditing harness at: $target_dir"
+  echo "──────────────────────────────────────────────"
+
+  local issues=0
+
+  # 1. Check Rules
+  echo "📜 Auditing Rules..."
+  local rules_dir="$target_dir/rules"
+  if [ ! -d "$rules_dir" ] && [ -d "$target_dir/.agents/rules" ]; then
+    rules_dir="$target_dir/.agents/rules"
+  fi
+
+  if [ -d "$rules_dir" ]; then
+    for rf in "$rules_dir/"*.md; do
+      [ -f "$rf" ] || continue
+      local lines
+      lines=$(wc -l < "$rf" | tr -d ' ')
+      local bname
+      bname=$(basename "$rf")
+      if [ "$lines" -gt 100 ]; then
+        echo "   ⚠️  [Token Warning] '$bname' is $lines lines. Always-on rules should remain < 100 lines."
+        echo "       Consider moving large guides to an on-demand Skill and using a Skill Router."
+        issues=$((issues + 1))
+      else
+        echo "   ✅ '$bname' ($lines lines) — Clean size"
+      fi
+    done
+  else
+    echo "   ⚠️  No 'rules/' directory found."
+    issues=$((issues + 1))
+  fi
+
+  # 2. Check Skills
+  echo "🧰 Auditing Skills..."
+  local skills_dir="$target_dir/skills"
+  if [ ! -d "$skills_dir" ] && [ -d "$target_dir/.agents/skills" ]; then
+    skills_dir="$target_dir/.agents/skills"
+  fi
+
+  if [ -d "$skills_dir" ]; then
+    for sd in "$skills_dir/"*; do
+      [ -d "$sd" ] || continue
+      local sname
+      sname=$(basename "$sd")
+      if [ ! -f "$sd/SKILL.md" ]; then
+        echo "   ❌ '$sname' is missing SKILL.md specification file."
+        issues=$((issues + 1))
+      else
+        echo "   ✅ '$sname/SKILL.md' present"
+      fi
+    done
+  else
+    echo "   ℹ️  No skills directory found."
+  fi
+
+  # 3. Check Hooks
+  echo "🪝 Auditing Hooks..."
+  local hooks_dir="$target_dir/hooks"
+  if [ -d "$hooks_dir" ]; then
+    for hk in "$hooks_dir/"*; do
+      [ -d "$hk" ] || continue
+      local hname
+      hname=$(basename "$hk")
+      if [ ! -x "$hk/$hname" ] && [ -f "$hk/$hname" ]; then
+        echo "   ⚠️  Hook '$hk/$hname' is not executable (chmod +x needed)."
+        issues=$((issues + 1))
+      else
+        echo "   ✅ Hook '$hname' verified"
+      fi
+    done
+  else
+    echo "   ℹ️  No standalone 'hooks/' directory found."
+  fi
+
+  echo "──────────────────────────────────────────────"
+  if [ "$issues" -eq 0 ]; then
+    echo "✨ Audit clean! Harness adheres to 3-Pillar & minimal token standards."
+  else
+    echo "⚠️  Found $issues recommendation(s). Review findings above."
+  fi
+}
+
+cmd_cases() {
+  echo "📚 [MHM Case Studies] Archetypal Harness Analyses"
+  echo "──────────────────────────────────────────────"
+  echo "1. Jihan Harness       — docs/case-studies/01-jihan-harness.md"
+  echo "   • Lean 3-Pillar architecture, Skill Dispatcher pattern, zero dependencies"
+  echo "2. Everything Claude   — docs/case-studies/02-everything-claude-code.md"
+  echo "   • Agentic OS, PreToolUse/Stop lifecycle hooks, config-protection"
+  echo "3. Superpowers (obra)  — docs/case-studies/03-obra-superpowers.md"
+  echo "   • Iron Law of debugging, TDD cycle, anti-symptom-patching"
+  echo "4. Ponytail (Dietrich) — docs/case-studies/04-dietrich-ponytail.md"
+  echo "   • Ladder of Laziness, complexity review, ponytail-debt ledger"
+  echo "──────────────────────────────────────────────"
+  echo "View full details in $SCRIPT_DIR/docs/case-studies/"
+}
+
+case "${1:-}" in
+  init)
+    cmd_init "${2:-}"
+    ;;
+  audit)
+    cmd_audit "${2:-.}"
+    ;;
+  cases)
+    cmd_cases
+    ;;
+  version|-v)
+    echo "mhm v$VERSION"
+    ;;
+  help|-h|"")
+    show_help
+    ;;
+  *)
+    echo "❌ Unknown command: $1"
+    show_help
+    exit 1
+    ;;
+esac

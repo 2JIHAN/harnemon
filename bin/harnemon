@@ -1,44 +1,113 @@
 #!/usr/bin/env bash
 # bin/harnemon — Harnemon (하네몬) CLI
-# The Pokémon-style, Zero-Dependency Harness Companion for AI Coding Agents.
+# The Pokémon-Style, Zero-Dependency Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.4.0"
+VERSION="0.5.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GLOBAL_HOME="${HOME}/.harnemon"
 
 show_help() {
   cat << 'EOF'
-  ⚡ Harnemon (하네몬) ⚡
-  The Pokémon-Style, Zero-Dependency Harness Companion for AI Coding Agents
+  ⚡ HARNEMON (하네몬) ⚡
+  The Pokémon-Style, Zero-Dependency Autonomous Harness Companion
 
 Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
-  feed [--link] [path]  Feed a Harness Pill to a folder (default: current directory)
-                        Options: --link (symlink to global belt, 0 build footprint)
-  link [path]           Roam & link project to global Harnemon (~/.harnemon) with 0 dependencies
-  sync [path]           Cross-pollinate: sync locally learned skills back to global Harnedex
-  dex                   Open the Harnedex (하네몬 도감) to inspect legendary archetypes
-  audit [path]          Diagnose Harnemon health, token bloat, and rule integrity
-  init <name>           Scaffold a new custom Harnemon species repository
-  help, -h              Show this help message
-  version, -v           Show Harnemon version
+  adopt [species] [path]  Adopt a Harnemon instance into your project (alias: feed --link)
+                          Species: routis (민첩 라우터), bastion (설정 수호), ironik (철칙 디버깅), yagni (다이어트)
+  status [path]           Check your adopted Harnemon's status (Abilities, Moves, Held Items)
+  feed [--link] [path]    Feed a Harness Pill to awaken a Harnemon (default: current directory)
+  link [path]             Zero-dependency link: bind project to global Harnemon (~/.harnemon)
+  sync [path]             Cross-pollinate: sync locally learned moves back to global Harnedex
+  dex                     Open the Harnedex (하네몬 도감) to inspect legendary archetypes
+  audit [path]            Diagnose Harnemon health, token bloat, and rule integrity
+  init <name>             Scaffold a new custom Harnemon species repository
+  help, -h                Show this help message
+  version, -v             Show Harnemon version
 
-Zero-Dependency Invariants:
-  • Zero build footprint: Never modifies package.json, pyproject.toml, or Cargo.toml
-  • Pure native: 100% POSIX Bash & Git, runs instantly on any project in any language
-  • Roaming: Links to ~/.harnemon so your Harnemon moves and evolves with you everywhere
+The Pokémon Architecture:
+  • Global Harnemon = Class / Species (원형 설계도 / 피카츄라는 '종')
+  • Project Harnemon = Instance / Individual (이 레포에 분양되어 특화 진화하는 '지우의 피카츄')
+  • Zero Dependencies: 100% POSIX Bash & Git, 0 npm/pip/cargo packages required
 
 Examples:
-  harnemon link                        # Zero-dependency roaming link in current repo
-  harnemon link /path/to/any-repo      # Roam into Rust, Go, Python, or Web projects
-  harnemon feed --link                 # Same as 'harnemon link'
-  harnemon sync                        # Push locally learned skills to global belt
-  harnemon dex                         # View the legendary Harnedex archetypes
-  harnemon audit                       # Health-check current Harnemon
+  harnemon adopt                       # Adopt standard Harnemon in current directory
+  harnemon adopt routis                # Adopt the agile Routis species
+  harnemon status                      # View current Harnemon's moves and abilities
+  harnemon audit                       # Health-check your Harnemon
+  harnemon dex                         # Browse the 4 legendary Harnemons
 EOF
+}
+
+cmd_adopt() {
+  local species="standard"
+  local target_dir="."
+
+  if [ $# -gt 0 ]; then
+    case "$1" in
+      routis|bastion|ironik|yagni)
+        species="$1"
+        shift
+        ;;
+      *)
+        ;;
+    esac
+  fi
+
+  if [ $# -gt 0 ]; then
+    target_dir="$1"
+  fi
+
+  echo "🌟 [Harnemon Adoption] Adopting '$species' Harnemon instance into project..."
+  cmd_feed --link "$target_dir"
+}
+
+cmd_status() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "⚡ [Harnemon Status] Inspecting Partner at: $target_dir"
+  echo "──────────────────────────────────────────────"
+  local rules_dir="$target_dir/.agents/rules"
+  if [ -d "$rules_dir" ]; then
+    echo "📜 Active Abilities (Rules):"
+    for r in "$rules_dir/"*.md; do
+      [ -f "$r" ] || continue
+      echo "   • $(basename "$r" .md)"
+    done
+  else
+    echo "📜 Abilities: None"
+  fi
+
+  local skills_dir="$target_dir/.agents/skills"
+  if [ -d "$skills_dir" ]; then
+    echo "🧰 Learned Moves (Skills):"
+    for s in "$skills_dir/"*; do
+      [ -d "$s" ] || continue
+      echo "   • $(basename "$s")"
+    done
+  else
+    echo "🧰 Moves: None"
+  fi
+
+  local hooks_dir="$target_dir/.git/hooks"
+  if [ -d "$hooks_dir" ]; then
+    echo "🪝 Equipped Held Items (Hooks):"
+    for h in "$hooks_dir/"*; do
+      [ -x "$h" ] || continue
+      local hn
+      hn="$(basename "$h")"
+      [[ "$hn" == *.sample ]] && continue
+      echo "   • $hn"
+    done
+  else
+    echo "🪝 Held Items: None"
+  fi
+  echo "──────────────────────────────────────────────"
+  echo "✨ Ready for battle (coding sessions)!"
 }
 
 cmd_feed() {
@@ -448,6 +517,14 @@ cmd_dex() {
 }
 
 case "${1:-}" in
+  adopt)
+    shift
+    cmd_adopt "$@"
+    ;;
+  status)
+    shift
+    cmd_status "$@"
+    ;;
   feed)
     shift
     cmd_feed "$@"

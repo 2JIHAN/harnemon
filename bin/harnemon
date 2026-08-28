@@ -3,7 +3,7 @@
 # The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.8.1"
+VERSION="0.9.0"
 
 get_species_signature() {
   local species="$1"
@@ -43,11 +43,15 @@ Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
+  party [path]             View your project's Harnemon Party lineup (up to 6 members)
+  recruit, add <species>   Recruit an additional Harnemon specialist into your project party
+  switch <species> [path]  Switch the Active Lead partner in your project party
+  dismiss <species> [path] Dismiss a member from your project party
   incubate, egg [path]     Awaken a blank Harnemon Egg 🥚 to incubate and evolve via 2-correction feedback
   hatch <name> [options]   Hatch the incubated egg into a named mature Harnemon species (e.g. Supabird ⚡)
   register [path]          Register your mature Harnemon species to global Harnedex (~/.harnemon/catalog/)
   adopt [species] [path]   Adopt a starter (1: Nimbleet ⚡, 2: Fortoise 💧, 3: Monkin 🔥, 4: Yagni 🍃, 0: Egg 🥚)
-  status [path]            Check your adopted partner's profile, abilities, moves, and held items
+  status [path]            Check your active partner & party profile, abilities, and moves
   audit [path]             Diagnose Harnemon health, token bloat, and rule integrity
   feed [--link] [path]     Feed a Harness Pill to awaken a Harnemon in a target folder
   link [path]              Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
@@ -527,6 +531,317 @@ cmd_register() {
   echo "   ❯ harnemon adopt $species"
 }
 
+
+cmd_party() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+  local party_file="$harnemons_dir/party.json"
+  local partner_file="$harnemons_dir/partner.json"
+
+  if [ ! -d "$harnemons_dir" ]; then
+    echo "❌ Error: No Harnemon found in $target_dir. Run 'harnemon adopt' or 'harnemon incubate' first!"
+    exit 1
+  fi
+
+  echo "🐾 [Harnemon Party] Team Lineup at: $target_dir"
+  echo "──────────────────────────────────────────────"
+
+  local active_species="nimbleet"
+  if [ -f "$party_file" ]; then
+    active_species=$(grep -o '"lead": "[^"]*' "$party_file" | head -n 1 | cut -d'"' -f4)
+  elif [ -f "$partner_file" ]; then
+    active_species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+  fi
+
+  local active_partner_file="$harnemons_dir/$active_species/partner.json"
+  [ ! -f "$active_partner_file" ] && active_partner_file="$partner_file"
+
+  local p_name p_type p_desc
+  p_name=$(grep -o '"name": "[^"]*' "$active_partner_file" | head -n 1 | cut -d'"' -f4 || echo "$active_species")
+  p_type=$(grep -o '"type": "[^"]*' "$active_partner_file" | head -n 1 | cut -d'"' -f4 || echo "Active ⚡")
+  p_desc=$(grep -o '"description": "[^"]*' "$active_partner_file" | head -n 1 | cut -d'"' -f4 || echo "")
+
+  echo "🌟 Active Lead: $p_name [$p_type]"
+  echo "   Trait: $p_desc"
+  echo "   Home:  .harnemons/$active_species/"
+  echo ""
+  echo "👥 Party Lineup:"
+
+  local count=0
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    local sname
+    sname="$(basename "$sdir")"
+    local s_part="$sdir/partner.json"
+    [ ! -f "$s_part" ] && s_part="$partner_file"
+    
+    local sn st
+    sn=$(grep -o '"name": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "$sname")
+    st=$(grep -o '"type": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+    
+    count=$((count + 1))
+    if [ "$sname" = "$active_species" ]; then
+      echo "   $count. $sn [$st] ➔ (Active Lead)"
+    else
+      echo "   $count. $sn [$st]"
+    fi
+  done
+
+  echo "──────────────────────────────────────────────"
+  echo "💡 Party Actions:"
+  echo "   • Switch lead:    harnemon switch <species>"
+  echo "   • Recruit member: harnemon recruit <species>"
+  echo "   • Dismiss member: harnemon dismiss <species>"
+}
+
+cmd_recruit() {
+  local species="${1:-}"
+  local target_dir="${2:-.}"
+
+  if [ -z "$species" ]; then
+    echo "❌ Error: Please specify a species to recruit (e.g. monkin, yagni, fortoise, supabird)."
+    echo "   Usage: harnemon recruit <species> [path]"
+    exit 1
+  fi
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+
+  if [ ! -d "$harnemons_dir" ]; then
+    echo "❌ Error: No Harnemon found in $target_dir. Run 'harnemon adopt' or 'harnemon incubate' first!"
+    exit 1
+  fi
+
+  local species_dir="$harnemons_dir/$species"
+  if [ -d "$species_dir" ]; then
+    echo "ℹ️ '$species' is already a member of your project party!"
+    return 0
+  fi
+
+  local species_name="" species_type="" species_desc=""
+  case "$species" in
+    nimbleet)
+      species_name="Nimbleet"
+      species_type="Electric ⚡"
+      species_desc="50-token skill router, ultralight zero-dependency minimal speedster"
+      ;;
+    fortoise)
+      species_name="Fortoise"
+      species_type="Water 💧"
+      species_desc="Impenetrable shell, linter config guardian, lifecycle hooks fortress"
+      ;;
+    monkin)
+      species_name="Monkin"
+      species_type="Fire 🔥"
+      species_desc="The Iron Law discipline, burns away guessing with root-cause proofs"
+      ;;
+    yagni)
+      species_name="Yagni"
+      species_type="Grass 🍃"
+      species_desc="Ladder of Laziness, prunes dead code, slashes complexity (-N lines)"
+      ;;
+    *)
+      local cat_json="$GLOBAL_HOME/catalog/$species/partner.json"
+      if [ -f "$cat_json" ]; then
+        species_name=$(grep -o '"name": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        species_type=$(grep -o '"type": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        species_desc=$(grep -o '"description": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+      else
+        species_name="$(echo "$species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
+        species_type="Custom 🌟"
+        species_desc="Custom Harnemon party specialist"
+      fi
+      ;;
+  esac
+
+  echo "🎉 [Harnemon Party] Recruiting '$species_name [$species_type]' into project party..."
+
+  local base_source="$SCRIPT_DIR"
+  if [ -d "$GLOBAL_HOME/catalog/$species" ]; then
+    base_source="$GLOBAL_HOME/catalog/$species"
+  elif [ -d "$GLOBAL_HOME" ]; then
+    base_source="$GLOBAL_HOME"
+  fi
+
+  mkdir -p "$species_dir/rules" "$species_dir/skills"
+
+  cat << EOF > "$species_dir/partner.json"
+{
+  "species": "$species",
+  "name": "$species_name",
+  "type": "$species_type",
+  "description": "$species_desc",
+  "recruited_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  local rules_src="$base_source/rules"
+  [ ! -d "$rules_src" ] && rules_src="$SCRIPT_DIR/rules"
+  for rf in "$rules_src/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    cp "$rf" "$species_dir/rules/$bname"
+    if [ "$bname" = "terminal-response-format.md" ]; then
+      local sig
+      sig="$(get_species_signature "$species" "$species_name" "$species_type")"
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/{{HARNEMON_SIGNATURE}}/${sig}/g" "$species_dir/rules/$bname" 2>/dev/null || true
+      else
+        sed -i "s/{{HARNEMON_SIGNATURE}}/${sig}/g" "$species_dir/rules/$bname" 2>/dev/null || true
+      fi
+    fi
+  done
+
+  local skills_src="$base_source/skills"
+  [ ! -d "$skills_src" ] && skills_src="$SCRIPT_DIR/skills"
+  for sd in "$skills_src/"*; do
+    local sname
+    sname="$(basename "$sd")"
+    if [ -d "$sd" ]; then
+      mkdir -p "$species_dir/skills/$sname"
+      cp -R "$sd/"* "$species_dir/skills/$sname/"
+    elif [ -f "$sd" ]; then
+      cp "$sd" "$species_dir/skills/$sname"
+    fi
+  done
+
+  local current_lead="nimbleet"
+  if [ -f "$harnemons_dir/party.json" ]; then
+    current_lead=$(grep -o '"lead": "[^"]*' "$harnemons_dir/party.json" | head -n 1 | cut -d'"' -f4)
+  elif [ -f "$harnemons_dir/partner.json" ]; then
+    current_lead=$(grep -o '"species": "[^"]*' "$harnemons_dir/partner.json" | head -n 1 | cut -d'"' -f4)
+  fi
+
+  cat << EOF > "$harnemons_dir/party.json"
+{
+  "lead": "$current_lead",
+  "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  echo "✨ '$species_name [$species_type]' successfully joined the party!"
+  echo "   Home: .harnemons/$species/"
+}
+
+cmd_switch() {
+  local species="${1:-}"
+  local target_dir="${2:-.}"
+
+  if [ -z "$species" ]; then
+    echo "❌ Error: Please specify which species to switch to as Active Lead."
+    echo "   Usage: harnemon switch <species> [path]"
+    exit 1
+  fi
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+  local species_dir="$harnemons_dir/$species"
+
+  if [ ! -d "$species_dir" ]; then
+    echo "ℹ️ '$species' is not yet in the party. Recruiting now..."
+    cmd_recruit "$species" "$target_dir"
+  fi
+
+  local s_part="$harnemons_dir/partner.json"
+  [ -f "$species_dir/partner.json" ] && s_part="$species_dir/partner.json"
+
+  local p_name p_type p_desc
+  p_name=$(grep -o '"name": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "$species")
+  p_type=$(grep -o '"type": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+  p_desc=$(grep -o '"description": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+
+  cat << EOF > "$harnemons_dir/party.json"
+{
+  "lead": "$species",
+  "switched_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  cat << EOF > "$harnemons_dir/partner.json"
+{
+  "species": "$species",
+  "name": "$p_name",
+  "type": "$p_type",
+  "description": "$p_desc",
+  "active_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  rm -rf "$target_dir/.agents/skills"
+  ln -sf "../.harnemons/$species/skills" "$target_dir/.agents/skills"
+
+  rm -rf "$target_dir/.claude/skills"
+  ln -sf "../.harnemons/$species/skills" "$target_dir/.claude/skills"
+
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  cat << EOF > "$agents_md"
+# Harnemon Operating Rules (AGENTS.md)
+
+**Partner**: $p_name [$p_type]
+**Species**: $species
+**Description**: $p_desc
+
+This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
+
+## Active Abilities (Rules)
+EOF
+  for rf in "$species_dir/rules/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    echo "@../.harnemons/$species/rules/$bname" >> "$agents_md"
+  done
+
+  cat << EOF >> "$agents_md"
+
+## Learned Moves (Skills Catalog)
+@../.harnemons/$species/skills/INDEX.md
+EOF
+
+  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+
+  echo ""
+  echo "⚡ [Harnemon Party] Switched Active Lead to: '$p_name [$p_type]'!"
+  echo "   All AI queries and turn messages will now be handled by $p_name."
+}
+
+cmd_dismiss() {
+  local species="${1:-}"
+  local target_dir="${2:-.}"
+
+  if [ -z "$species" ]; then
+    echo "❌ Error: Please specify which species to dismiss."
+    echo "   Usage: harnemon dismiss <species> [path]"
+    exit 1
+  fi
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+  local species_dir="$harnemons_dir/$species"
+
+  if [ ! -d "$species_dir" ]; then
+    echo "❌ Error: '$species' is not in this project party."
+    exit 1
+  fi
+
+  local active_lead="nimbleet"
+  if [ -f "$harnemons_dir/party.json" ]; then
+    active_lead=$(grep -o '"lead": "[^"]*' "$harnemons_dir/party.json" | head -n 1 | cut -d'"' -f4)
+  fi
+
+  if [ "$species" = "$active_lead" ]; then
+    echo "❌ Error: Cannot dismiss '$species' while it is the Active Lead. Please switch to another partner first!"
+    echo "   ❯ harnemon switch <other-species>"
+    exit 1
+  fi
+
+  rm -rf "$species_dir"
+  echo "👋 Dismissed '$species' from project party."
+}
+
 cmd_status() {
   local target_dir="${1:-.}"
   target_dir="$(cd "$target_dir" && pwd)"
@@ -697,6 +1012,15 @@ cmd_feed() {
   mkdir -p "$species_dir"
 
   cat << EOF > "$harnemons_dir/partner.json"
+{
+  "species": "$p_species",
+  "name": "$p_name",
+  "type": "$p_type",
+  "description": "$p_desc",
+  "adopted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+  cat << EOF > "$species_dir/partner.json"
 {
   "species": "$p_species",
   "name": "$p_name",
@@ -1085,6 +1409,22 @@ cmd_dex() {
 }
 
 case "${1:-}" in
+  party)
+    shift
+    cmd_party "$@"
+    ;;
+  recruit|add)
+    shift
+    cmd_recruit "$@"
+    ;;
+  switch)
+    shift
+    cmd_switch "$@"
+    ;;
+  dismiss|remove)
+    shift
+    cmd_dismiss "$@"
+    ;;
   adopt)
     shift
     cmd_adopt "$@"

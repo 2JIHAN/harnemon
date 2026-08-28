@@ -144,7 +144,21 @@ harnemon hatch "Supabird" --type "Database ⚡" --desc "Supabase RLS & Edge Func
 harnemon register
 ```
 
-### 4. Inspect Partner Status & Health
+### 4. Build a Multi-Harnemon Party (`recruit` / `party` / `switch`)
+Assemble a team of up to 6 specialized Harnemons in a single project:
+```bash
+# Recruit specialist partners into your party:
+harnemon recruit monkin    # Recruit Monkin 🔥 for strict debugging
+harnemon recruit yagni     # Recruit Yagni 🍃 for code-pruning
+
+# View your party lineup:
+harnemon party
+
+# Switch the Active Lead partner dynamically:
+harnemon switch monkin     # Active turns now handled by Monkin 🔥
+```
+
+### 5. Inspect Partner Status & Health
 ```bash
 # 1. View your adopted partner profile or egg incubation progress
 harnemon status

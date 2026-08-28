@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# hooks/install.sh — Master installer for all hooks in jihan-harness
 set -euo pipefail
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="${1:-.}"
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || echo ".git")"
 
-echo "📦 Installing hooks to $TARGET_DIR..."
-
-if [ -f "$SCRIPT_DIR/commit-msg/install.sh" ]; then
-  bash "$SCRIPT_DIR/commit-msg/install.sh" "$TARGET_DIR"
+if [ ! -d "$GIT_DIR" ]; then
+  echo "⚠️ Not a git repository. Skipping hook installation."
+  exit 0
 fi
 
-if [ -f "$SCRIPT_DIR/pre-commit/install.sh" ]; then
-  bash "$SCRIPT_DIR/pre-commit/install.sh" "$TARGET_DIR"
-fi
-
-echo "✨ All hooks installed successfully."
+mkdir -p "$GIT_DIR/hooks"
+for h in commit-msg pre-commit; do
+  if [ -f "$SCRIPT_DIR/$h" ]; then
+    cp "$SCRIPT_DIR/$h" "$GIT_DIR/hooks/$h"
+    chmod +x "$GIT_DIR/hooks/$h"
+    echo "🪝 Installed Git hook: $h"
+  fi
+done

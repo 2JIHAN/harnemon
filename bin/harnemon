@@ -723,6 +723,15 @@ EOF
 
   echo "✨ '$species_name [$species_type]' successfully joined the party!"
   echo "   Home: .harnemons/$species/"
+
+  local l_name="Nimbleet" l_type="Electric ⚡" l_desc="50-token skill router, ultralight zero-dependency minimal speedster"
+  local l_part="$harnemons_dir/$current_lead/partner.json"
+  if [ -f "$l_part" ]; then
+    l_name=$(grep -o '"name": "[^"]*' "$l_part" | head -n 1 | cut -d'"' -f4 || echo "$current_lead")
+    l_type=$(grep -o '"type": "[^"]*' "$l_part" | head -n 1 | cut -d'"' -f4 || echo "")
+    l_desc=$(grep -o '"description": "[^"]*' "$l_part" | head -n 1 | cut -d'"' -f4 || echo "")
+  fi
+  generate_agents_md "$target_dir" "$current_lead" "$l_name" "$l_type" "$l_desc"
 }
 
 cmd_switch() {
@@ -775,33 +784,7 @@ EOF
   rm -rf "$target_dir/.claude/skills"
   ln -sf "../.harnemons/$species/skills" "$target_dir/.claude/skills"
 
-  local agents_md="$target_dir/.agents/AGENTS.md"
-  cat << EOF > "$agents_md"
-# Harnemon Operating Rules (AGENTS.md)
-
-**Partner**: $p_name [$p_type]
-**Species**: $species
-**Description**: $p_desc
-
-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
-
-## Active Abilities (Rules)
-EOF
-  for rf in "$species_dir/rules/"*.md; do
-    [ -f "$rf" ] || continue
-    local bname
-    bname="$(basename "$rf")"
-    echo "@../.harnemons/$species/rules/$bname" >> "$agents_md"
-  done
-
-  cat << EOF >> "$agents_md"
-
-## Learned Moves (Skills Catalog)
-@../.harnemons/$species/skills/INDEX.md
-EOF
-
-  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
-  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+  generate_agents_md "$target_dir" "$species" "$p_name" "$p_type" "$p_desc"
 
   echo ""
   echo "⚡ [Harnemon Party] Switched Active Lead to: '$p_name [$p_type]'!"
@@ -840,6 +823,70 @@ cmd_dismiss() {
 
   rm -rf "$species_dir"
   echo "👋 Dismissed '$species' from project party."
+}
+
+
+generate_agents_md() {
+  local target_dir="$1"
+  local lead_species="$2"
+  local p_name="$3"
+  local p_type="$4"
+  local p_desc="$5"
+
+  local harnemons_dir="$target_dir/.harnemons"
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  mkdir -p "$target_dir/.agents"
+
+  cat << EOF > "$agents_md"
+# Harnemon Operating Rules (AGENTS.md)
+
+**Active Lead**: $p_name [$p_type]
+**Species**: $lead_species
+**Description**: $p_desc
+
+This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
+
+## Active Abilities (Rules)
+EOF
+
+  local species_dir="$harnemons_dir/$lead_species"
+  for rf in "$species_dir/rules/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    echo "@../.harnemons/$lead_species/rules/$bname" >> "$agents_md"
+  done
+
+  local has_other=0
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    local sname
+    sname="$(basename "$sdir")"
+    if [ "$sname" != "$lead_species" ] && [ "$sname" != "egg" ]; then
+      if [ "$has_other" -eq 0 ]; then
+        echo "" >> "$agents_md"
+        echo "## Party Roster & Specialists" >> "$agents_md"
+        has_other=1
+      fi
+      local s_part="$sdir/partner.json"
+      local sn="$sname" st="" sd=""
+      if [ -f "$s_part" ]; then
+        sn=$(grep -o '"name": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "$sname")
+        st=$(grep -o '"type": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+        sd=$(grep -o '"description": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+      fi
+      echo "- **$sn [$st]** — \`.harnemons/$sname/\` ($sd)" >> "$agents_md"
+    fi
+  done
+
+  cat << EOF >> "$agents_md"
+
+## Learned Moves (Skills Catalog)
+@../.harnemons/$lead_species/skills/INDEX.md
+EOF
+
+  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
 }
 
 cmd_status() {

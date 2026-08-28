@@ -1,9 +1,14 @@
-# Project Guidelines
+# Harnemon Master Repository Guidelines (AGENTS.md)
 
-@rules/fluent-korean.md
+**Role**: Harnemon Master Blueprint & Core Engine
+**Architecture**: 3 Pillars (Rule, Skill, Hook) & 3 Invariants (Idempotency, Auto-Wiring, Zero-Dependency)
 
-@rules/skill-routing.md
+## Active Abilities (Rules)
+@../rules/fluent-korean.md
+@../rules/harness-evolution.md
+@../rules/skill-routing.md
+@../rules/task-execution-protocol.md
+@../rules/terminal-response-format.md
 
-@rules/task-execution-protocol.md
-
-@rules/terminal-response-format.md
+## Learned Moves (Skills Catalog)
+@../skills/INDEX.md

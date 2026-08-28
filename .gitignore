@@ -1,8 +1,11 @@
+# OS / Editor clutter
 .DS_Store
 *.swp
+*.bak
 *~
-.env
-.env.*
-node_modules/
-dist/
-tmp/
+
+# Test directories
+/tmp/test-*
+
+# Local caches
+.cache/

@@ -28,6 +28,14 @@ The comprehensive knowledge base, canonical worldbuilding, and architectural the
   - Pillar 2: Skill (Moves / On-demand specialized playbooks)
   - Pillar 3: Hook (Held Items / Deterministic OS & Git physical gates)
   - The 3 Invariants: Idempotency, Auto-wiring, Zero-dependency
+- **[`harnemon-incubator.md`](harnemon-incubator.md)** — **The Harnemon Incubator & Hatching System**
+  - Blank Egg 🥚 starter with 0 pre-packaged rules
+  - The 2-Correction feedback absorption loop
+  - Maturation, species naming, and global Harnedex registration
+- **[`harnemon-party-system.md`](harnemon-party-system.md)** — **The Harnemon Multi-Party System**
+  - Assembling a team of up to 6 specialized Harnemons in a single workspace
+  - Active Lead switching (`harnemon switch`) and recruitment (`harnemon recruit`)
+  - Subagent task delegation and multi-role turn signatures
 
 ---
 

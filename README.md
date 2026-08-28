@@ -196,35 +196,29 @@ Your adopted Harnemon doesn't stay static—it learns and evolves as you code to
 ```text
 harnemon/
 ├── bin/
-│   └── harnemon                             # Global Trainer CLI
-├── rules/                                   # [Abilities: Always-on Rules]
-│   ├── fluent-korean.md                     # • Natural Korean interaction conventions
-│   ├── harness-evolution.md                 # • Self-evolution & ownership protocol
-│   ├── skill-routing.md                     # • On-demand skill dispatcher hub
-│   ├── task-execution-protocol.md           # • Sizing, anti-polling & verification
-│   └── terminal-response-format.md          # • Clean visual presentation layout
-├── skills/                                  # [Moves: On-Demand Skills]
-│   ├── harness-evolution/                   # • Skill synthesis and router playbook
-│   ├── systematic-debugging/                # • Root-cause tracing & 4-step debugging
-│   ├── ponytail/                            # • Minimal coding & Ladder of Laziness
-│   ├── ponytail-review/                     # • Diff complexity hunter review
-│   ├── ponytail-audit/                      # • Full-repo bloat auditor
-│   ├── ponytail-debt/                       # • Shortcut debt ledger harvester
-│   ├── delegate-to-aside/                   # • Aside AI browser integration
-│   ├── writing-docs/                        # • Technical writing standards
-│   └── writing-docs-in-korean/              # • Korean technical documentation
-├── hooks/                                   # [Held Items: Git Hard Gates]
-│   ├── commit-msg/                          # • 72-char limit & AI signature blocker
-│   └── pre-commit/                          # • Config weakening & secret leak blocker
-├── templates/                               # [Templates: Starters & Incubator]
-│   └── egg/                                 # • Blank canvas egg starter
-├── docs/                                    # [Harnedex & Theory]
-│   ├── what-is-a-harness.md                 # • Harness vs prompt definition
-│   ├── maturity-model.md                    # • 5-stage harness maturity framework
-│   ├── three-pillars-and-invariants.md      # • 3 Pillars & Invariants specification
-│   ├── harnemon-incubator.md                # • Incubator & Hatching system guide
-│   └── case-studies/                        # • Detailed Harnedex archetype entries
-└── README.md
+│   └── harnemon                             # ⚡ Global Trainer CLI (v0.9.0)
+├── species/                                 # 🧬 [Modular Species Blueprints]
+│   ├── egg/                                 # • No.000: Blank Canvas Egg Starter (🌱)
+│   │   ├── partner.json & memory/           #   - Incubation log & exp tracking
+│   │   ├── rules/                           #   - Incubation kernel & evolution rules
+│   │   └── skills/                          #   - Self-evolution & catalog
+│   ├── nimbleet/                            # • No.001: Lightning Router (⚡)
+│   │   ├── partner.json & rules/            #   - 50-token active routing abilities
+│   │   ├── skills/                          #   - Aside browser, writing-docs
+│   │   └── hooks/                           #   - Commit-msg & pre-commit gates
+│   ├── fortoise/                            # • No.002: Config-Guard Fortress (💧)
+│   │   ├── partner.json & rules/            #   - Config-weakening prevention rules
+│   │   └── hooks/                           #   - Strict CI & lint protection gates
+│   ├── monkin/                              # • No.003: The Iron Law Crucible (🔥)
+│   │   ├── partner.json & rules/            #   - Strict root-cause verification rules
+│   │   └── skills/                          #   - Systematic 4-step debugging
+│   └── yagni/                               # • No.004: Ladder of Laziness Pruner (🍃)
+│       ├── partner.json & rules/            #   - Code minimalism & lazier rules
+│       └── skills/                          #   - Ponytail, review, audit, debt
+├── catalog/                                 # 🌐 Community & Custom Species Catalog
+├── docs/                                    # 📚 Harnedex & Architecture Theory
+├── .github/                                 # 🚀 Open-source Issue Forms & CI Workflows
+└── README.md (EN / KO / JA / ZH)            # 🌐 4-Language i18n Synchronized Docs
 ```
 
 ---

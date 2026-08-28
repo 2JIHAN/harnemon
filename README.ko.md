@@ -196,35 +196,29 @@ harnemon dex
 ```text
 harnemon/
 ├── bin/
-│   └── harnemon                             # 전역 트레이너 CLI
-├── rules/                                   # [상시 특성: Rule]
-│   ├── fluent-korean.md                     # • 자연스러운 한국어 소통 규칙
-│   ├── harness-evolution.md                 # • 자율 진화 및 하네스 소유권 규칙
-│   ├── skill-routing.md                     # • 50토큰 스킬 신호등 라우터 허브
-│   ├── task-execution-protocol.md           # • 태스크 사이징, 안티폴링, 실측검증
-│   └── terminal-response-format.md          # • 터미널 시각 레이아웃 표준
-├── skills/                                  # [보유 기술: Skill]
-│   ├── harness-evolution/                   # • 자율 스킬 합성 및 라우터 플레이북
-│   ├── systematic-debugging/                # • 근본 원인 추적 4단계 디버깅
-│   ├── ponytail/                            # • 미니멀 코딩 & 게으름의 사다리
-│   ├── ponytail-review/                     # • diff 복잡도 사냥 리뷰
-│   ├── ponytail-audit/                      # • 전체 리포 코드 군더더기 감사
-│   ├── ponytail-debt/                       # • 지연된 숏컷 부채 장부 수확
-│   ├── delegate-to-aside/                   # • Aside AI 브라우저 GUI 위임
-│   ├── writing-docs/                        # • 영문 기술 문서 작성 표준
-│   └── writing-docs-in-korean/              # • 국문 기술 문서 작성 표준
-├── hooks/                                   # [장착 도구: Hook]
-│   ├── commit-msg/                          # • 72자 제한 및 AI 서명 차단 게이트
-│   └── pre-commit/                          # • 설정 약화 및 시크릿 유출 차단 게이트
-├── templates/                               # [템플릿 및 인큐베이터]
-│   └── egg/                                 # • 제로 베이스 빈 알 스타터
-├── docs/                                    # [하네덱스 및 이론]
-│   ├── what-is-a-harness.md                 # • 하네스의 정의 및 프롬프트와의 차이
-│   ├── maturity-model.md                    # • 하네스 5단계 성숙도 모델
-│   ├── three-pillars-and-invariants.md      # • 3대 기둥 및 3대 불변식 설계론
-│   ├── harnemon-incubator.md                # • 인큐베이터 및 부화 시스템 상세 가이드
-│   └── case-studies/                        # • 하네덱스 아키타입별 상세 분석집
-└── README.md
+│   └── harnemon                             # ⚡ 전역 트레이너 CLI (v0.9.0)
+├── species/                                 # 🧬 [종별 독립 모듈 청사진]
+│   ├── egg/                                 # • No.000: 빈 알 인큐베이터 스타터 (🌱)
+│   │   ├── partner.json & memory/           #   - 인큐베이션 기록 및 경험치 추적
+│   │   ├── rules/                           #   - 2회 교정 피드백 커널 및 진화 규칙
+│   │   └── skills/                          #   - 자율 진화 스킬
+│   ├── nimbleet/                            # • No.001: 번개 라우터 (⚡)
+│   │   ├── partner.json & rules/            #   - 50토큰 상시 라우팅 능력
+│   │   ├── skills/                          #   - Aside 브라우저, 문서 작성
+│   │   └── hooks/                           #   - 커밋 메시지 및 프리커밋 하드 게이트
+│   ├── fortoise/                            # • No.002: 설정 방어 요새 (💧)
+│   │   ├── partner.json & rules/            #   - 린트 설정 약화 차단 규칙
+│   │   └── hooks/                           #   - 엄격한 CI 및 무결성 수호 훅
+│   ├── monkin/                              # • No.003: 철칙의 도가니 (🔥)
+│   │   ├── partner.json & rules/            #   - 원인 규명 전 수정 금지 철칙
+│   │   └── skills/                          #   - 4단계 체계적 디버깅
+│   └── yagni/                               # • No.004: 게으름의 사다리 (🍃)
+│       ├── partner.json & rules/            #   - 코드 다이어트 및 미니멀리즘 규칙
+│       └── skills/                          #   - Ponytail, 리뷰, 감사, 부채 장부
+├── catalog/                                 # 🌐 커뮤니티 및 커스텀 종 도감 등록처
+├── docs/                                    # 📚 하네덱스 및 아키텍처 이론 문서
+├── .github/                                 # 🚀 오픈소스 거버넌스 폼 및 CI 워크플로우
+└── README.md (EN / KO / JA / ZH)            # 🌐 4개 국어 동기화 다국어 문서
 ```
 
 ---

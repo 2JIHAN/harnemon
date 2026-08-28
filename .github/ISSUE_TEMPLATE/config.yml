@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "📖 Harnemon Documentation"
+    url: "https://github.com/2JIHAN/harnemon/tree/main/docs"
+    about: "Read the official guides, Harnedex case studies, and architecture docs."
+  - name: "💬 GitHub Discussions"
+    url: "https://github.com/2JIHAN/harnemon/discussions"
+    about: "Ask questions, discuss AI harness ideas, and show off your hatched Harnemons."

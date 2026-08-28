@@ -1,0 +1,40 @@
+name: "🐾 New Harnemon Species Submission"
+description: "Propose or submit a newly hatched Harnemon species to the global Harnedex"
+title: "[Species]: "
+labels: ["species", "harnedex"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🎉 Congratulations on hatching a new Harnemon species! Please share its profile below.
+  - type: input
+    id: species_name
+    attributes:
+      label: Species Name
+      placeholder: "e.g. Supabird, Rustacean, Nextor"
+    validations:
+      required: true
+  - type: input
+    id: species_type
+    attributes:
+      label: Species Type & Element
+      placeholder: "e.g. Database ⚡, Rust 🦀, Frontend 🎨"
+    validations:
+      required: true
+  - type: textarea
+    id: trait_desc
+    attributes:
+      label: Signature Trait & Description
+      placeholder: "What makes this species special? (e.g. 50-token Supabase RLS master)"
+    validations:
+      required: true
+  - type: textarea
+    id: abilities_moves
+    attributes:
+      label: Core Abilities (Rules) & Moves (Skills)
+      placeholder: |
+        - Rules: rules/supabase-conventions.md
+        - Skills: skills/rls-policy-builder/
+        - Hooks: hooks/verify-migration
+    validations:
+      required: true

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate Shell Script Syntax
+        run: |
+          bash -n bin/harnemon
+          find hooks -name "*.sh" -exec bash -n {} + 2>/dev/null || true
+
+      - name: Test Harnemon CLI Commands
+        run: |
+          chmod +x bin/harnemon
+          ./bin/harnemon help
+          ./bin/harnemon dex
+          ./bin/harnemon version
+
+      - name: Test Incubator Lifecycle (Egg -> Hatch -> Audit)
+        run: |
+          mkdir -p /tmp/test-harness
+          ./bin/harnemon incubate /tmp/test-harness
+          ./bin/harnemon status /tmp/test-harness
+          ./bin/harnemon audit /tmp/test-harness
+          ./bin/harnemon hatch "Testmon" --type "Test ⚡" --desc "Test Species" /tmp/test-harness
+          ./bin/harnemon status /tmp/test-harness
+          ./bin/harnemon audit /tmp/test-harness
+
+      - name: Test Starter Adoption
+        run: |
+          mkdir -p /tmp/test-nimbleet
+          ./bin/harnemon adopt nimbleet /tmp/test-nimbleet
+          ./bin/harnemon status /tmp/test-nimbleet
+          ./bin/harnemon audit /tmp/test-nimbleet

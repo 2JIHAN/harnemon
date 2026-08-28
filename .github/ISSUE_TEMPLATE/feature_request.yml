@@ -1,0 +1,32 @@
+name: "💡 Feature Request"
+description: "Suggest a new idea, CLI command, or architectural enhancement"
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make Harnemon faster, leaner, or more capable? We would love to hear it!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem or limitation?
+      placeholder: "I am always frustrated when..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you would like to see.
+      placeholder: "Add a 'harnemon draw' command to..."
+    validations:
+      required: true
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: Invariant Check
+      options:
+        - label: This feature maintains the 100% Zero-Dependency invariant (Pure Bash/Git).
+          required: true

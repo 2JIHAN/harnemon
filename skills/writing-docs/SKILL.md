@@ -50,3 +50,24 @@ Always determine who will read the document before drafting:
 2. **One rule per line**: Never combine multiple distinct constraints into a single bullet point.
 3. **Condition-first syntax**: Frame rules as `When [condition], do [action]` rather than trailing conditions.
 4. **Reserve rationale for ambiguity only**: Explain "why" only when the rule requires adaptive judgment in novel edge cases. Adding explanations to self-evident rules generates noise.
+---
+
+## 5. Multilingual & i18n Standard (Default Requirement)
+
+Whenever creating, modifying, or expanding public repository documentation (READMEs, showcases, major guides), always maintain the 4-language i18n standard as a non-negotiable default:
+
+- **1. Core 4-Language Suite**:
+  - `README.md` — Canonical English
+  - `README.ko.md` — Natural, fluent Korean (strict `fluent-korean` standard)
+  - `README.ja.md` — Natural Japanese
+  - `README.zh-CN.md` — Standard Simplified Chinese
+- **2. Top Language Switcher Bar**: Always place an interactive language selector at the very top of each file:
+  ```html
+  <p align="center">
+    <a href="README.md"><b>English</b></a> •
+    <a href="README.ko.md"><b>한국어</b></a> •
+    <a href="README.ja.md"><b>日本語</b></a> •
+    <a href="README.zh-CN.md"><b>简体中文</b></a>
+  </p>
+  ```
+- **3. Atomic Synchronization**: When modifying a section, update all language files simultaneously to prevent documentation drift.

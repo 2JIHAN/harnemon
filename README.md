@@ -109,12 +109,13 @@ Every tool and rule in Harnemon strictly obeys 3 system invariants:
 
 ## ⚡ Quickstart
 
-### 1. Install Global Tool
+### 1. Install Global Tool & Awaken Global Awareness
 ```bash
-# Clone to global belt and symlink to PATH
+# Clone to global belt and run one-time global setup
 git clone https://github.com/2JIHAN/harnemon.git ~/.harnemon
-ln -sf ~/.harnemon/bin/harnemon ~/.local/bin/harnemon
+~/.harnemon/bin/harnemon setup
 ```
+> `harnemon setup` automatically symlinks the CLI to your PATH and registers Global Harnemon Awareness in `~/.agents/AGENTS.md` and `~/.claude/CLAUDE.md` so AI agents in all workspaces recognize Harnemon.
 
 ### 2. Adopt a Starter or Incubate a Blank Egg
 Navigate to any project directory:

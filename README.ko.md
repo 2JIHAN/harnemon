@@ -109,12 +109,13 @@
 
 ## ⚡ 빠른 시작 (Quickstart)
 
-### 1. 전역 도구 설치
+### 1. 전역 도구 설치 및 AI 전역 인지 등록
 ```bash
-# 전역 벨트에 클론 후 PATH 심링크 연결
+# 전역 벨트에 클론 후 원클릭 전역 설정 실행
 git clone https://github.com/2JIHAN/harnemon.git ~/.harnemon
-ln -sf ~/.harnemon/bin/harnemon ~/.local/bin/harnemon
+~/.harnemon/bin/harnemon setup
 ```
+> `harnemon setup`은 CLI를 PATH에 자동 연결하고, `~/.agents/AGENTS.md` 및 `~/.claude/CLAUDE.md`에 **전역 하네몬 인지 규칙**을 등록하여 어떤 폴더에서 AI를 실행하더라도 하네몬을 즉시 인식하도록 만듭니다.
 
 ### 2. 스타팅 하네몬 분양 또는 빈 알 인큐베이팅
 원하는 프로젝트 폴더로 이동합니다:

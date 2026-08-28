@@ -26,6 +26,7 @@ jobs:
       - name: Test Harnemon CLI Commands
         run: |
           chmod +x bin/harnemon
+          ./bin/harnemon setup
           ./bin/harnemon help
           ./bin/harnemon dex
           ./bin/harnemon version

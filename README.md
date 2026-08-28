@@ -144,8 +144,18 @@ harnemon hatch "Supabird" --type "Database ⚡" --desc "Supabase RLS & Edge Func
 harnemon register
 ```
 
-### 4. Build a Multi-Harnemon Party (`recruit` / `party` / `switch`)
-Assemble a team of up to 6 specialized Harnemons in a single project:
+### 4. Build a Multi-Harnemon Party (`adopt` / `party` / `switch`)
+Assemble a team of up to 6 specialized Harnemons in a single project with simple `adopt` commands:
+```bash
+# Adopt specialist partners into your party anytime:
+harnemon adopt monkin      # Adopt Monkin 🔥 for strict debugging
+harnemon adopt yagni       # Adopt Yagni 🍃 for code-pruning
+
+# View your party lineup:
+harnemon party
+
+# Switch the Active Lead partner dynamically:
+harnemon switch nimbleet   # Active turns now handled by Nimbleet ⚡
 ```bash
 # Recruit specialist partners into your party:
 harnemon recruit monkin    # Recruit Monkin 🔥 for strict debugging

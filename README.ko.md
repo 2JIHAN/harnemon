@@ -144,8 +144,18 @@ harnemon hatch "Supabird" --type "Database ⚡" --desc "Supabase RLS & Edge Func
 harnemon register
 ```
 
-### 4. 멀티 하네몬 파티 구성 (`recruit` / `party` / `switch`)
-한 프로젝트 안에 최대 6마리의 전문 하네몬으로 파티를 꾸려 협업할 수 있습니다:
+### 4. 멀티 하네몬 파티 구성 (`adopt` / `party` / `switch`)
+언제든 `adopt` 명령어로 한 프로젝트 안에 최대 6마리의 전문 하네몬을 영입하여 파티를 꾸릴 수 있습니다:
+```bash
+# 전문 하네몬을 파티 멤버로 추가 분양:
+harnemon adopt monkin      # 철칙 디버깅 전문가 몽킨 🔥 영입
+harnemon adopt yagni       # 코드 정리 전문가 야그니 🍃 영입
+
+# 현재 파티 라인업 확인:
+harnemon party
+
+# 작업 성격에 따라 선발 리드 교체:
+harnemon switch nimbleet   # 이후 턴 메시지를 님블리트 ⚡가 주도
 ```bash
 # 전문 하네몬을 파티 멤버로 영입:
 harnemon recruit monkin    # 철칙 디버깅 전문가 몽킨 🔥 영입

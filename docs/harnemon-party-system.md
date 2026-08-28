@@ -23,18 +23,21 @@
 
 ## 🛠️ 파티 관리 CLI 명령어
 
-### 1. 파티 현황 조회 (`party`)
+### 1. 하네몬 분양 및 파티 영입 (`adopt`)
+최초 분양이든, 기존 파티에 추가 영입이든 **`harnemon adopt`** 단일 명령어로 완결됩니다:
+```bash
+# 첫 번째 파트너 분양 (선발 리드로 자동 활성화):
+harnemon adopt nimbleet
+
+# 두 번째, 세 번째 전문 하네몬 추가 분양 (기존 파티에 안전하게 추가):
+harnemon adopt monkin     # 몽킨 🔥 추가 (디버깅)
+harnemon adopt yagni      # 야그니 🍃 추가 (코드 다이어트)
+```
+
+### 2. 파티 현황 조회 (`party`)
 현재 프로젝트에 영입된 하네몬 엔트리와 현재 선발 리드를 확인합니다:
 ```bash
 harnemon party
-```
-
-### 2. 새 하네몬 영입 (`recruit`)
-기존 설정을 덮어쓰지 않고 새로운 전문 하네몬을 파티 멤버로 추가합니다:
-```bash
-harnemon recruit monkin     # 몽킨 🔥 영입 (디버깅)
-harnemon recruit yagni      # 야그니 🍃 영입 (코드 정리)
-harnemon recruit fortoise   # 포토이즈 💧 영입 (보안/CI)
 ```
 
 ### 3. 선발 리드 교체 (`switch`)

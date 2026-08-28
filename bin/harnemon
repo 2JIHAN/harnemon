@@ -3,7 +3,7 @@
 # The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.9.0"
+VERSION="0.9.1"
 
 get_species_signature() {
   local species="$1"
@@ -43,14 +43,13 @@ Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
+  adopt [species] [path]   Adopt a Harnemon starter or add an additional specialist to your party
   party [path]             View your project's Harnemon Party lineup (up to 6 members)
-  recruit, add <species>   Recruit an additional Harnemon specialist into your project party
   switch <species> [path]  Switch the Active Lead partner in your project party
   dismiss <species> [path] Dismiss a member from your project party
   incubate, egg [path]     Awaken a blank Harnemon Egg 🥚 to incubate and evolve via 2-correction feedback
   hatch <name> [options]   Hatch the incubated egg into a named mature Harnemon species (e.g. Supabird ⚡)
   register [path]          Register your mature Harnemon species to global Harnedex (~/.harnemon/catalog/)
-  adopt [species] [path]   Adopt a starter (1: Nimbleet ⚡, 2: Fortoise 💧, 3: Monkin 🔥, 4: Yagni 🍃, 0: Egg 🥚)
   status [path]            Check your active partner & party profile, abilities, and moves
   audit [path]             Diagnose Harnemon health, token bloat, and rule integrity
   feed [--link] [path]     Feed a Harness Pill to awaken a Harnemon in a target folder
@@ -1459,13 +1458,13 @@ cmd_dex() {
 }
 
 case "${1:-}" in
+  adopt|recruit|add)
+    shift
+    cmd_adopt "$@"
+    ;;
   party)
     shift
     cmd_party "$@"
-    ;;
-  recruit|add)
-    shift
-    cmd_recruit "$@"
     ;;
   switch)
     shift
@@ -1474,10 +1473,6 @@ case "${1:-}" in
   dismiss|remove)
     shift
     cmd_dismiss "$@"
-    ;;
-  adopt)
-    shift
-    cmd_adopt "$@"
     ;;
   incubate|egg)
     shift

@@ -21,7 +21,7 @@ jobs:
       - name: Validate Shell Script Syntax
         run: |
           bash -n bin/harnemon
-          find hooks -name "*.sh" -exec bash -n {} + 2>/dev/null || true
+          find species -name "*.sh" -exec bash -n {} + 2>/dev/null || true
 
       - name: Test Harnemon CLI Commands
         run: |
@@ -46,3 +46,14 @@ jobs:
           ./bin/harnemon adopt nimbleet /tmp/test-nimbleet
           ./bin/harnemon status /tmp/test-nimbleet
           ./bin/harnemon audit /tmp/test-nimbleet
+
+      - name: Test Multi-Harnemon Party System
+        run: |
+          mkdir -p /tmp/test-party
+          ./bin/harnemon adopt nimbleet /tmp/test-party
+          ./bin/harnemon recruit monkin /tmp/test-party
+          ./bin/harnemon recruit yagni /tmp/test-party
+          ./bin/harnemon party /tmp/test-party
+          ./bin/harnemon switch monkin /tmp/test-party
+          ./bin/harnemon party /tmp/test-party
+          ./bin/harnemon audit /tmp/test-party

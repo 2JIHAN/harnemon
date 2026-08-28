@@ -912,20 +912,14 @@ cmd_setup() {
   mkdir -p "$global_agents_dir"
   local global_agents_md="$global_agents_dir/AGENTS.md"
 
-  local harness_rule="""# Global AI Agent Guidelines (~/.agents/AGENTS.md)
+  local harness_rule="""# Global Agent Guidelines (~/.agents/AGENTS.md)
 
-## ⚡ Harnemon Global Awareness
-This system is equipped with **Harnemon** (\`~/.harnemon\`), the zero-dependency autonomous harness companion for AI coding agents.
+## ⚡ Harnemon Companion (~/.harnemon)
+Autonomous zero-dependency harness companion for AI coding agents.
 
-### Workspace Detection & Behavior
-1. **Adopted Repository**: When working in any directory, check if \`.harnemons/\` or \`.agents/AGENTS.md\` exists in the project root.
-   - If present, strictly follow the active partner's abilities (Rules), specialized skills, and output the required turn signature (\`-Harnemon {Name} {Icon}-\`).
-2. **Unadopted Repository**: If no Harnemon is present in the repository, recommend or run \`harnemon adopt\` (or \`harnemon incubate\`) to awaken a companion.
-3. **Core CLI Commands**:
-   - \`harnemon adopt [species]\` — Adopt a starter (\`nimbleet ⚡\`, \`fortoise 💧\`, \`monkin 🔥\`, \`yagni 🍃\`) or add to party
-   - \`harnemon incubate\` — Start with a blank egg 🥚 (self-evolving via 2-correction feedback)
-   - \`harnemon party\` / \`harnemon switch <species>\` — Inspect or switch active party lead
-   - \`harnemon status\` / \`harnemon audit\` — Diagnose partner health and rule integrity
+- **Adopted Workspace**: If `.harnemons/` exists, follow the active partner in `.agents/AGENTS.md` and output `-Harnemon {Name} {Icon}-`.
+- **Unadopted Workspace**: Run `harnemon adopt` or `harnemon incubate` to awaken a companion.
+- **Reference**: Full details and species catalog at `~/.harnemon/README.md`.
 """
 
   if [ ! -f "$global_agents_md" ]; then

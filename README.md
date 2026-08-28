@@ -8,6 +8,13 @@
   <em>"Global Harnemon is a Class (Species), and Project Harnemon is an Instance ('Ash's Pikachu')."</em>
 </p>
 
+<p align="center">
+  <a href="README.md"><b>English</b></a> •
+  <a href="README.ko.md"><b>한국어</b></a> •
+  <a href="README.ja.md"><b>日本語</b></a> •
+  <a href="README.zh-CN.md"><b>简体中文</b></a>
+</p>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Zero-Dependency](https://img.shields.io/badge/Dependencies-Zero-success.svg?style=for-the-badge)](#-the-3-invariants)
 [![Runtime: Pure POSIX Bash](https://img.shields.io/badge/Runtime-Pure_POSIX_Bash-orange.svg?style=for-the-badge)](#-the-3-invariants)

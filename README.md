@@ -197,28 +197,20 @@ Your adopted Harnemon doesn't stay static—it learns and evolves as you code to
 harnemon/
 ├── bin/
 │   └── harnemon                             # ⚡ Global Trainer CLI (v0.9.0)
-├── species/                                 # 🧬 [Modular Species Blueprints]
-│   ├── egg/                                 # • No.000: Blank Canvas Egg Starter (🌱)
-│   │   ├── partner.json & memory/           #   - Incubation log & exp tracking
-│   │   ├── rules/                           #   - Incubation kernel & evolution rules
-│   │   └── skills/                          #   - Self-evolution & catalog
+├── templates/                               # 🥚 [Incubation Scaffolding Templates]
+│   └── egg/                                 # • No.000: Blank Canvas Egg Starter (🌱)
+│       ├── partner.json & memory/           #   - Incubation log & exp progression
+│       ├── rules/                           #   - 2-correction feedback kernel & evolution
+│       └── skills/                          #   - Hermes self-evolution engine
+├── species/                                 # 🧬 [Mature Gen-1 Species Blueprints]
 │   ├── nimbleet/                            # • No.001: Lightning Router (⚡)
-│   │   ├── partner.json & rules/            #   - 50-token active routing abilities
-│   │   ├── skills/                          #   - Aside browser, writing-docs
-│   │   └── hooks/                           #   - Commit-msg & pre-commit gates
 │   ├── fortoise/                            # • No.002: Config-Guard Fortress (💧)
-│   │   ├── partner.json & rules/            #   - Config-weakening prevention rules
-│   │   └── hooks/                           #   - Strict CI & lint protection gates
 │   ├── monkin/                              # • No.003: The Iron Law Crucible (🔥)
-│   │   ├── partner.json & rules/            #   - Strict root-cause verification rules
-│   │   └── skills/                          #   - Systematic 4-step debugging
 │   └── yagni/                               # • No.004: Ladder of Laziness Pruner (🍃)
-│       ├── partner.json & rules/            #   - Code minimalism & lazier rules
-│       └── skills/                          #   - Ponytail, review, audit, debt
-├── catalog/                                 # 🌐 Community & Custom Species Catalog
-├── docs/                                    # 📚 Harnedex & Architecture Theory
-├── .github/                                 # 🚀 Open-source Issue Forms & CI Workflows
-└── README.md (EN / KO / JA / ZH)            # 🌐 4-Language i18n Synchronized Docs
+├── catalog/                                 # 🌐 Community & Hatched Custom Species
+├── docs/                                    # 📚 Architecture Theory & Harnedex
+├── .github/                                 # 🚀 Open-source Governance & CI Workflows
+└── README.md (EN / KO / JA / ZH)            # 🌐 4-Language Synchronized Docs
 ```
 
 ---

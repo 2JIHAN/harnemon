@@ -197,28 +197,20 @@ harnemon dex
 harnemon/
 ├── bin/
 │   └── harnemon                             # ⚡ 전역 트레이너 CLI (v0.9.0)
-├── species/                                 # 🧬 [종별 독립 모듈 청사진]
-│   ├── egg/                                 # • No.000: 빈 알 인큐베이터 스타터 (🌱)
-│   │   ├── partner.json & memory/           #   - 인큐베이션 기록 및 경험치 추적
-│   │   ├── rules/                           #   - 2회 교정 피드백 커널 및 진화 규칙
-│   │   └── skills/                          #   - 자율 진화 스킬
+├── templates/                               # 🥚 [인큐베이터 기본 템플릿]
+│   └── egg/                                 # • No.000: 빈 알 인큐베이터 스타터 (🌱)
+│       ├── partner.json & memory/           #   - 인큐베이션 일지 및 경험치 관리
+│       ├── rules/                           #   - 2회 교정 피드백 커널 및 진화 규칙
+│       └── skills/                          #   - Hermes 자율 진화 스킬
+├── species/                                 # 🧬 [완성된 1세대 하네몬 종 청사진]
 │   ├── nimbleet/                            # • No.001: 번개 라우터 (⚡)
-│   │   ├── partner.json & rules/            #   - 50토큰 상시 라우팅 능력
-│   │   ├── skills/                          #   - Aside 브라우저, 문서 작성
-│   │   └── hooks/                           #   - 커밋 메시지 및 프리커밋 하드 게이트
 │   ├── fortoise/                            # • No.002: 설정 방어 요새 (💧)
-│   │   ├── partner.json & rules/            #   - 린트 설정 약화 차단 규칙
-│   │   └── hooks/                           #   - 엄격한 CI 및 무결성 수호 훅
 │   ├── monkin/                              # • No.003: 철칙의 도가니 (🔥)
-│   │   ├── partner.json & rules/            #   - 원인 규명 전 수정 금지 철칙
-│   │   └── skills/                          #   - 4단계 체계적 디버깅
 │   └── yagni/                               # • No.004: 게으름의 사다리 (🍃)
-│       ├── partner.json & rules/            #   - 코드 다이어트 및 미니멀리즘 규칙
-│       └── skills/                          #   - Ponytail, 리뷰, 감사, 부채 장부
-├── catalog/                                 # 🌐 커뮤니티 및 커스텀 종 도감 등록처
-├── docs/                                    # 📚 하네덱스 및 아키텍처 이론 문서
+├── catalog/                                 # 🌐 커뮤니티 및 부화된 커스텀 종 도감
+├── docs/                                    # 📚 하네스 이론 및 아키텍처 문서
 ├── .github/                                 # 🚀 오픈소스 거버넌스 폼 및 CI 워크플로우
-└── README.md (EN / KO / JA / ZH)            # 🌐 4개 국어 동기화 다국어 문서
+└── README.md (EN / KO / JA / ZH)            # 🌐 4개 국어 동기화 문서
 ```
 
 ---

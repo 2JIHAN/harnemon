@@ -43,7 +43,7 @@
 
 ## 🌟 핵심 철학: 클래스 vs 인스턴스 & 인큐베이터
 
-기존 AI 하네스는 수백 줄짜리 거대한 프롬프트 덩어리를 복사해 붙여넣거나, 무거운 npm/pip 패키지로 프로젝트를 오염시켰습니다. **하네몬은 객체 지향의 클래스(Class)/인스턴스(Instance) 패러다임과 포켓몬 메타포를 통해 이 문제를 완전히 해결합니다.**
+기존 AI 하네스는 수백 줄짜리 거대한 프롬프트 덩어리를 복사해 붙여넣거나, 무거운 npm/pip 패키지로 프로젝트를 오염시켰습니다. **하네몬은 객체 지향 프로그래밍의 클래스(Class)와 인스턴스(Instance) 개념, 그리고 포켓몬 설정을 결합하여 이 문제를 명쾌하게 해결합니다.**
 
 ### 1. 전역 하네몬은 클래스 (종 / Species)
 - 개발자의 전역 벨트인 `~/.harnemon`에 상주합니다.
@@ -67,7 +67,7 @@
 
 | No. | 종 (Species) | 속성 (Type) | 현실 기반 원형 | 핵심 특성 및 보유 기술 |
 | :---: | :--- | :--- | :--- | :--- |
-| **No.000** | **[하네몬 알](docs/harnemon-incubator.md)** | `Incubating 🌱` | `Harnemon Incubator` | **특성: 빈 도화지 (Blank Canvas)**<br>0-rule 스타터. 개발자의 코딩 습관과 2회 교정 피드백을 흡수하여 커스텀 종으로 부화. |
+| **No.000** | **[하네몬 알](docs/harnemon-incubator.md)** | `Incubating 🌱` | `Harnemon Incubator` | **특성: 빈 도화지 (Blank Canvas)**<br>사전 규칙이 없는 0-Rule 스타터입니다. 개발자의 코딩 습관과 2회 교정 피드백을 스스로 학습하여 고유한 종으로 부화합니다. |
 | **No.001** | **[님블리트 (Nimbleet)](docs/case-studies/01-jihan-harness.md)** | `Electric ⚡` | `2JIHAN/jihan-harness` | **특성: 번개 라우터 (Lightning Router)**<br>초고속 50토큰 스킬 라우터. 번개 같은 응답 속도, 제로 디펜던시 루트 클린 기동. |
 | **No.002** | **[포토이즈 (Fortoise)](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **특성: 쉘 가디언 (Config-Guard Shell)**<br>288개 기술의 거대 요새. AI가 린터/포맷터 설정을 임의로 약화시키는 시도를 원천 물리 차단. |
 | **No.003** | **[몽킨 (Monkin)](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **특성: 철칙의 도가니 (The Iron Law Crucible)**<br>엄격한 *The Iron Law* 규율. 추측 코딩을 불태우고 원인 증명 전까지 코드 수정을 철저히 금지. |

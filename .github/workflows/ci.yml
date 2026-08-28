@@ -32,14 +32,33 @@ jobs:
           ./bin/harnemon version
           ./bin/harnemon update
 
-      - name: Test Incubator Lifecycle (Egg -> Hatch -> Audit)
+      - name: Test Incubator Lifecycle (Egg -> Learn -> Hatch -> Rest)
         run: |
           mkdir -p /tmp/test-harness
           ./bin/harnemon incubate /tmp/test-harness
           ./bin/harnemon status /tmp/test-harness
           ./bin/harnemon audit /tmp/test-harness
-          ./bin/harnemon hatch "Testmon" --type "Test ⚡" --desc "Test Species" /tmp/test-harness
+
+          # An egg with nothing absorbed must refuse to hatch
+          if ./bin/harnemon hatch "Tooearly" /tmp/test-harness; then
+            echo "Expected the hatch gate to reject an empty egg"; exit 1
+          fi
+
+          ./bin/harnemon note "Always run pnpm build before deploying" --dir /tmp/test-harness
+          ./bin/harnemon note "Prefer native fetch over axios" --type convention --dir /tmp/test-harness
+          ./bin/harnemon note "Use tabs, not spaces" --dir /tmp/test-harness
+          ./bin/harnemon note "Ship migrations in a separate PR" --type decision --dir /tmp/test-harness
+          ./bin/harnemon note "Always run pnpm build before deploying" --dir /tmp/test-harness
+          printf '# Build Before Deploy\n\n- Run the build before deploying.\n' \
+            > /tmp/test-harness/.harnemons/egg/rules/build-before-deploy.md
           ./bin/harnemon status /tmp/test-harness
+
+          ./bin/harnemon hatch "Testmon" --type "Test ⚡" --desc "Test Species" /tmp/test-harness
+          test -f /tmp/test-harness/.harnemons/testmon/memory/MEMORY.md
+          test -d /tmp/test-harness/.harnemons/testmon/memory/episodes
+          ./bin/harnemon status /tmp/test-harness
+          ./bin/harnemon rest /tmp/test-harness
+          ./bin/harnemon rest /tmp/test-harness --apply
           ./bin/harnemon audit /tmp/test-harness
 
       - name: Test Starter Adoption

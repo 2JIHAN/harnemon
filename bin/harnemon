@@ -28,6 +28,8 @@ Commands:
   register [path]          Register your mature Harnemon species to global Harnedex (~/.harnemon/catalog/)
   status [path]            Check your active partner & party profile, abilities, and moves
   draw [species] [path]    Draw the partner sprite: writes sprite.json & avatar.svg, prints it in color
+  note "<text>" [--type]   Record what the Harnemon just learned into today's episode log
+  rest [path] [--apply]    Tend distilled memory: flag promoted, duplicate, and uncited entries
   audit [path]             Diagnose Harnemon health, token bloat, and rule integrity
   feed [--link] [path]     Feed a Harness Pill to awaken a Harnemon in a target folder
   link [path]              Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
@@ -48,6 +50,8 @@ Examples:
   harnemon hatch "Supabird" -t "DB ⚡" # Hatch the mature egg into a custom species
   harnemon register                    # Save the new species to global Harnedex
   harnemon adopt                       # Interactive starter selection (Egg or 4 Starters)
+  harnemon note "Always run pnpm build" # Record a correction and raise hatch readiness
+  harnemon rest                        # Review memory and see what is safe to retire
   harnemon status                      # View current partner profile or egg incubation progress
   harnemon draw --force                # Redraw the partner sprite from scratch
   harnemon audit                       # Health-check your partner
@@ -349,6 +353,7 @@ cmd_hatch() {
   local p_type="Custom 🌟"
   local p_desc=""
   local target_dir="."
+  local force_hatch=false
 
   if [ -z "$species_name" ]; then
     echo "❌ Error: Please specify a species name for the hatched Harnemon."
@@ -367,6 +372,10 @@ cmd_hatch() {
         p_desc="$2"
         shift 2
         ;;
+      --force|-f)
+        force_hatch=true
+        shift
+        ;;
       *)
         target_dir="$1"
         shift
@@ -381,6 +390,23 @@ cmd_hatch() {
   if [ ! -d "$egg_dir" ]; then
     echo "❌ Error: No incubating egg found at $harnemons_dir/egg."
     echo "   To start incubating an egg first, run: harnemon incubate"
+    exit 1
+  fi
+
+  local entries corrections learned_rules learned_skills readiness
+  read -r entries corrections learned_rules learned_skills <<< "$(memory_counts "$egg_dir")"
+  readiness=$(memory_readiness "$entries" "$learned_rules" "$learned_skills")
+  if [ "$readiness" -lt "$MEMORY_HATCH_MIN" ] && [ "$force_hatch" != true ]; then
+    echo "🥚 The egg is not ready to hatch yet."
+    echo "──────────────────────────────────────────────"
+    echo "   Hatch readiness: ${readiness}% (need ${MEMORY_HATCH_MIN}%)"
+    echo "   • Evidence recorded: $entries entries ($corrections corrections)"
+    echo "   • Rules learned:     $learned_rules"
+    echo "   • Moves learned:     $learned_skills"
+    echo "──────────────────────────────────────────────"
+    echo "   An egg hatches into what it absorbed. Keep coding with it, and record"
+    echo "   what it learns:  harnemon note \"<what you corrected>\""
+    echo "   To hatch anyway: harnemon hatch <name> --force"
     exit 1
   fi
 
@@ -404,6 +430,9 @@ cmd_hatch() {
   rm -f "$target_species_dir/rules/incubation-kernel.md"
 
   sprite_write "$target_species_dir" "$clean_species" "$p_type" 64 2>/dev/null || true
+
+  local kept merged
+  read -r kept merged <<< "$(memory_distill "$target_species_dir" "$display_name")"
 
   cat << EOF > "$harnemons_dir/partner.json"
 {
@@ -459,6 +488,11 @@ EOF
   echo "🎉 Congratulations! '$display_name [$p_type]' is born!"
   echo "   Trait:   $p_desc"
   echo "   Home:    .harnemons/$clean_species/"
+  echo "──────────────────────────────────────────────"
+  echo "🧬 Distillation:"
+  echo "   • $((kept + merged)) episodes → $kept memories$([ "$merged" -gt 0 ] && echo " ($merged duplicate$([ "$merged" -gt 1 ] && echo s) merged)")"
+  echo "   • Episodes kept intact at .harnemons/$clean_species/memory/episodes/"
+  echo "   • Distilled into .harnemons/$clean_species/memory/MEMORY.md"
   echo "──────────────────────────────────────────────"
   echo "📜 Active Abilities:"
   for r in "$target_species_dir/rules/"*.md; do
@@ -1397,6 +1431,352 @@ sprite_link_partner() {
   ' "$file" > "$tmp" && mv "$tmp" "$file"
 }
 
+# ── Memory Engine ─────────────────────────────────────────────
+# Episodes are append-only and never rewritten. MEMORY.md is the distilled
+# layer, written once at hatch and tended afterwards by harnemon rest.
+
+MEMORY_HATCH_MIN=60
+MEMORY_BASE_RULES=" incubation-kernel harness-evolution skill-routing terminal-response-format "
+MEMORY_BASE_SKILLS=" harness-evolution "
+
+memory_species_dir() {
+  # target_dir -> path of the active species directory, empty when there is none
+  local td="$1" hd="$1/.harnemons" sp=""
+  if [ -f "$hd/partner.json" ]; then
+    sp=$(grep -o '"species": "[^"]*' "$hd/partner.json" | head -n 1 | cut -d'"' -f4 || true)
+  fi
+  [ -z "$sp" ] && [ -d "$hd/egg" ] && sp="egg"
+  [ -n "$sp" ] && [ -d "$hd/$sp" ] && echo "$hd/$sp"
+}
+
+memory_episode_file() {
+  # species_dir -> path of today's episode file, created when absent
+  local dir="$1/memory/episodes"
+  local file="$dir/$(date -u +%Y-%m-%d).md"
+  mkdir -p "$dir"
+  if [ ! -f "$file" ]; then
+    printf '# Episodes · %s\n\n<!-- Append only. Never rewrite a past entry. -->\n\n' "$(date -u +%Y-%m-%d)" > "$file"
+  fi
+  echo "$file"
+}
+
+memory_counts() {
+  # species_dir -> "entries corrections rules skills"
+  local dir="$1" entries=0 corrections=0 rules=0 skills=0 f b
+  if [ -d "$dir/memory/episodes" ]; then
+    for f in "$dir/memory/episodes/"*.md; do
+      [ -f "$f" ] || continue
+      entries=$((entries + $(grep -c '^- \[' "$f" 2>/dev/null || echo 0)))
+      corrections=$((corrections + $(grep -c '^- \[correction\]' "$f" 2>/dev/null || echo 0)))
+    done
+  fi
+  for f in "$dir/rules/"*.md; do
+    [ -f "$f" ] || continue
+    b="$(basename "$f" .md)"
+    case "$MEMORY_BASE_RULES" in *" $b "*) ;; *) rules=$((rules + 1)) ;; esac
+  done
+  for f in "$dir/skills/"*; do
+    [ -d "$f" ] || continue
+    b="$(basename "$f")"
+    case "$MEMORY_BASE_SKILLS" in *" $b "*) ;; *) skills=$((skills + 1)) ;; esac
+  done
+  echo "$entries $corrections $rules $skills"
+}
+
+memory_readiness() {
+  # entries rules skills -> hatch readiness percentage
+  # Evidence alone cannot hatch an egg: promotions into rules and skills carry
+  # most of the weight, because those are what a mature species is made of.
+  local e="$1" r="$2" s="$3" a b c
+  a=$(( e * 8 ));  [ "$a" -gt 40 ] && a=40
+  b=$(( r * 20 )); [ "$b" -gt 40 ] && b=40
+  c=$(( s * 20 )); [ "$c" -gt 20 ] && c=20
+  echo $(( a + b + c ))
+}
+
+memory_exp() {
+  # entries rules skills -> experience points
+  echo $(( $1 * 10 + $2 * 50 + $3 * 30 ))
+}
+
+memory_distill() {
+  # species_dir display_name -> writes memory/MEMORY.md, echoes "kept merged"
+  local dir="$1" name="$2"
+  local out="$dir/memory/MEMORY.md"
+  mkdir -p "$dir/memory"
+
+  local files=("$dir/memory/episodes/"*.md)
+  [ -e "${files[0]}" ] || { printf '0 0\n'; return 0; }
+
+  awk -v NAME="$name" -v TODAY="$(date -u +%Y-%m-%d)" '
+    FNR == 1 { src = FILENAME; sub(/.*\/episodes\//, "episodes/", src) }
+    /^- \[/ {
+      t = substr($0, index($0, "[") + 1)
+      t = substr(t, 1, index(t, "]") - 1)
+      p = index($0, " :: ")
+      if (p == 0) next
+      txt = substr($0, p + 4)
+      key = t "|" txt
+      if (key in seen) { merged++; next }
+      seen[key] = 1
+      n++
+      type[n] = t; text[n] = txt; source[n] = src
+    }
+    END {
+      printf "# Memory · %s\n\n", NAME
+      printf "Distilled at hatch on %s from %d episode entries. Every entry points back\n", TODAY, n + merged
+      printf "to the episode it came from, so a claim can always be traced to the moment it\n"
+      printf "was learned. Tend this file with harnemon rest, and keep it under 100 lines.\n"
+      split("correction convention decision", ORDER, " ")
+      split("Corrections Conventions Decisions", TITLE, " ")
+      id = 0
+      for (k = 1; k <= 3; k++) {
+        want = ORDER[k]; printed = 0
+        for (i = 1; i <= n; i++) {
+          if (type[i] != want) continue
+          if (!printed) { printf "\n## %s\n\n", TITLE[k]; printed = 1 }
+          id++
+          printf "- %s\n", text[i]
+          printf "  <!-- id:m-%04d born:%s src:%s uses:0 last:- -->\n", id, TODAY, source[i]
+        }
+      }
+      printf "%d %d\n", n, merged > "/dev/stderr"
+    }
+  ' "${files[@]}" > "$out" 2> "$dir/memory/.distill-stat"
+
+  cat "$dir/memory/.distill-stat" 2>/dev/null || printf '0 0\n'
+  rm -f "$dir/memory/.distill-stat"
+}
+
+cmd_note() {
+  local text="" ntype="correction" target_dir="."
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --type|-t) ntype="$2"; shift 2 ;;
+      --dir|-C) target_dir="$2"; shift 2 ;;
+      -*) echo "❌ Unknown option: $1"; exit 1 ;;
+      *)
+        if [ -z "$text" ]; then text="$1"; else target_dir="$1"; fi
+        shift
+        ;;
+    esac
+  done
+
+  case "$ntype" in
+    correction|convention|decision) ;;
+    *) echo "❌ Error: --type must be correction, convention, or decision (got '$ntype')."; exit 1 ;;
+  esac
+
+  if [ -z "$text" ]; then
+    echo "❌ Error: Nothing to record."
+    echo "   Usage: harnemon note \"<what you learned>\" [--type correction|convention|decision]"
+    exit 1
+  fi
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local sdir
+  sdir="$(memory_species_dir "$target_dir")"
+  if [ -z "$sdir" ]; then
+    echo "❌ Error: No Harnemon found at $target_dir/.harnemons."
+    echo "   Run 'harnemon incubate' to start an egg first."
+    exit 1
+  fi
+
+  local file
+  file="$(memory_episode_file "$sdir")"
+  printf -- '- [%s] %s :: %s\n' "$ntype" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$text" >> "$file"
+
+  local entries corrections rules skills readiness
+  read -r entries corrections rules skills <<< "$(memory_counts "$sdir")"
+  readiness=$(memory_readiness "$entries" "$rules" "$skills")
+
+  echo "🌱 [Harnemon Incubating] Recorded a $ntype."
+  echo "   ${file#$target_dir/}"
+  echo "   Evidence: $entries entries ($corrections corrections) · Rules: $rules · Moves: $skills"
+  echo "   Hatch readiness: ${readiness}%$([ "$readiness" -lt "$MEMORY_HATCH_MIN" ] && echo " (need ${MEMORY_HATCH_MIN}% to hatch)" || echo " · ready to hatch")"
+}
+
+memory_cite() {
+  # species_dir id -> bumps the use counter of one memory entry
+  local file="$1/memory/MEMORY.md" id="$2" tmp
+  [ -f "$file" ] || { echo "❌ Error: No MEMORY.md yet. It is written when the egg hatches."; return 1; }
+  grep -q "id:$id " "$file" || { echo "❌ Error: No memory with id '$id'."; return 1; }
+  tmp="$(mktemp)"
+  awk -v ID="$id" -v TODAY="$(date -u +%Y-%m-%d)" '
+    $0 ~ ("id:" ID " ") {
+      u = $0; sub(/.*uses:/, "", u); sub(/ .*/, "", u)
+      sub(/uses:[0-9]+/, "uses:" (u + 1), $0)
+      sub(/last:[^ ]+/, "last:" TODAY, $0)
+    }
+    { print }
+  ' "$file" > "$tmp" && mv "$tmp" "$file"
+  echo "📌 Cited $id."
+}
+
+cmd_rest() {
+  local target_dir="." days=90 apply=false
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --days|-d) days="$2"; shift 2 ;;
+      --apply) apply=true; shift ;;
+      --cite|-c) local cite_id="$2"; shift 2 ;;
+      -*) echo "❌ Unknown option: $1"; exit 1 ;;
+      *) target_dir="$1"; shift ;;
+    esac
+  done
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local sdir
+  sdir="$(memory_species_dir "$target_dir")"
+  if [ -z "$sdir" ]; then
+    echo "❌ Error: No Harnemon found at $target_dir/.harnemons."
+    exit 1
+  fi
+
+  if [ -n "${cite_id:-}" ]; then
+    memory_cite "$sdir" "$cite_id"
+    return $?
+  fi
+
+  local mem="$sdir/memory/MEMORY.md"
+  if [ ! -f "$mem" ]; then
+    echo "🥚 Nothing to tend yet: MEMORY.md is written when the egg hatches."
+    echo "   Record what it learns in the meantime: harnemon note \"<text>\""
+    return 0
+  fi
+
+  local work
+  work="$(mktemp -d)"
+  local rule_files=("$sdir/rules/"*.md)
+  [ -e "${rule_files[0]}" ] || rule_files=()
+
+  awk -v DAYS="$days" -v TODAY="$(date -u +%Y-%m-%d)" -v OUT="$work" -v MEMFILE="$mem" '
+function daynum(d,   y, m, dd) {
+  y = substr(d,1,4) + 0; m = substr(d,6,2) + 0; dd = substr(d,9,2) + 0
+  return int(365.25 * y) + int(30.6 * m) + dd
+}
+function clean(s) { gsub(/[.,;:!?()"`]/, "", s); return tolower(s) }
+FILENAME != MEMFILE {
+  ruletext[FILENAME] = ruletext[FILENAME] " " clean($0)
+  next
+}
+{
+  lines[++ln] = $0
+}
+/^- / && !/^- \[/ { pending = ln; pendingtext = substr($0, 3) }
+/<!-- id:/ {
+  id = $0; sub(/.*id:/, "", id); sub(/ .*/, "", id)
+  born = $0; sub(/.*born:/, "", born); sub(/ .*/, "", born)
+  uses = $0; sub(/.*uses:/, "", uses); sub(/ .*/, "", uses)
+  n++
+  eid[n] = id; etext[n] = pendingtext; ebase[n] = pending; ecomment[n] = ln
+  eborn[n] = born; euses[n] = uses + 0
+}
+END {
+  report = OUT "/report.txt"
+  # 중복
+  for (i = 1; i <= n; i++) {
+    k = clean(etext[i])
+    if (k in firstseen) { reason[i] = "duplicate of " eid[firstseen[k]]; kind[i] = "dup" }
+    else firstseen[k] = i
+  }
+  # 규칙으로 이미 승격된 항목
+  for (i = 1; i <= n; i++) {
+    if (i in reason) continue
+    split(clean(etext[i]), w, " ")
+    for (f in ruletext) {
+      hit = 0; tot = 0
+      for (j in w) {
+        if (length(w[j]) < 4) continue
+        tot++
+        if (index(ruletext[f], w[j]) > 0) hit++
+      }
+      if (tot >= 3 && hit / tot >= 0.6) {
+        base = f; sub(/.*\//, "", base)
+        reason[i] = "already covered by rules/" base; kind[i] = "promoted"
+        break
+      }
+    }
+  }
+  # 오래도록 인용되지 않은 항목
+  for (i = 1; i <= n; i++) {
+    if (i in reason) continue
+    if (euses[i] == 0 && daynum(TODAY) - daynum(eborn[i]) >= DAYS) {
+      reason[i] = "never cited in " DAYS "+ days"; kind[i] = "stale"
+    }
+  }
+
+  flagged = 0
+  for (i = 1; i <= n; i++) if (i in reason) flagged++
+  printf "%d %d %d\n", n, flagged, ln > (OUT "/stat")
+
+  printf "" > report
+  for (pass = 1; pass <= 3; pass++) {
+    want = (pass == 1 ? "promoted" : (pass == 2 ? "dup" : "stale"))
+    title = (pass == 1 ? "Already promoted into a rule" : (pass == 2 ? "Duplicates" : "Never cited"))
+    shown = 0
+    for (i = 1; i <= n; i++) {
+      if (!(i in reason) || kind[i] != want) continue
+      if (!shown) { printf "\n  %s\n", title >> report; shown = 1 }
+      printf "    %s  %s\n", eid[i], etext[i] >> report
+      printf "            → %s\n", reason[i] >> report
+    }
+  }
+
+  # 적용본 작성: 폐기 대상 두 줄을 걷어내고 나머지는 그대로 둔다
+  for (i = 1; i <= n; i++) if (i in reason) { drop[ebase[i]] = 1; drop[ecomment[i]] = 1; ret[ebase[i]] = i }
+  newfile = OUT "/MEMORY.md"; retfile = OUT "/retired.add"
+  printf "" > newfile; printf "" > retfile
+  for (i = 1; i <= ln; i++) {
+    if (i in ret) { j = ret[i]; printf "- %s\n  <!-- id:%s born:%s retired:%s reason:%s -->\n", etext[j], eid[j], eborn[j], TODAY, reason[j] >> retfile }
+    if (i in drop) continue
+    print lines[i] >> newfile
+  }
+}
+' "${rule_files[@]}" "$mem"
+
+  local total flagged linecount
+  read -r total flagged linecount < "$work/stat"
+
+  echo "😴 [Harnemon Rest] Tending memory at .harnemons/$(basename "$sdir")/"
+  echo "──────────────────────────────────────────────"
+  echo "   Memories: $total · Flagged: $flagged · MEMORY.md: $linecount lines"
+  if [ "$linecount" -gt 100 ]; then
+    echo "   ⚠️  Over the 100-line budget. Distill or retire before it crowds the prompt."
+  fi
+
+  if [ "$flagged" -eq 0 ]; then
+    echo "──────────────────────────────────────────────"
+    echo "✨ Nothing to retire. The memory is lean."
+    rm -rf "$work"
+    return 0
+  fi
+
+  cat "$work/report.txt"
+  echo ""
+  echo "──────────────────────────────────────────────"
+  echo "   These are candidates, not verdicts. A memory that contradicts a current"
+  echo "   rule needs your judgement, not a word count."
+
+  if [ "$apply" != true ]; then
+    echo "   Retire them with: harnemon rest --apply"
+    rm -rf "$work"
+    return 0
+  fi
+
+  local retired="$sdir/memory/retired.md"
+  if [ ! -f "$retired" ]; then
+    printf '# Retired Memories\n\nEntries retired from MEMORY.md, with the reason and the date.\nNothing here is deleted. An entry can be moved back into MEMORY.md at any time.\n' > "$retired"
+  fi
+  printf '\n## %s\n\n' "$(date -u +%Y-%m-%d)" >> "$retired"
+  cat "$work/retired.add" >> "$retired"
+  mv "$work/MEMORY.md" "$mem"
+  rm -rf "$work"
+  echo "   ✅ Retired $flagged $([ "$flagged" -eq 1 ] && echo memory || echo memories) into memory/retired.md"
+}
+
 cmd_status() {
   local target_dir="${1:-.}"
   target_dir="$(cd "$target_dir" && pwd)"
@@ -1426,41 +1806,24 @@ cmd_status() {
       echo "   Home:    .harnemons/egg/"
       sprite_show "$target_dir/.harnemons/egg/sprite.json" 26 "   "
       
-      local log_file="$target_dir/.harnemons/egg/memory/incubation-log.md"
-      local obs_count=0
-      if [ -f "$log_file" ]; then
-        obs_count=$(grep -c "^- " "$log_file" 2>/dev/null || echo "0")
-      fi
-      local learned_rules=0
-      for r in "$target_dir/.harnemons/egg/rules/"*.md; do
-        [ -f "$r" ] || continue
-        local bn
-        bn=$(basename "$r")
-        if [ "$bn" != "incubation-kernel.md" ] && [ "$bn" != "harness-evolution.md" ]; then
-          learned_rules=$((learned_rules + 1))
-        fi
-      done
-      local learned_skills=0
-      for s in "$target_dir/.harnemons/egg/skills/"*; do
-        [ -d "$s" ] || continue
-        local sn
-        sn=$(basename "$s")
-        if [ "$sn" != "harness-evolution" ]; then
-          learned_skills=$((learned_skills + 1))
-        fi
-      done
-      
-      local readiness=$(( (learned_rules * 25) + (learned_skills * 25) + (obs_count * 10) ))
-      [ "$readiness" -gt 100 ] && readiness=100
+      local obs_count corrections learned_rules learned_skills readiness exp
+      read -r obs_count corrections learned_rules learned_skills <<< "$(memory_counts "$target_dir/.harnemons/egg")"
+      readiness=$(memory_readiness "$obs_count" "$learned_rules" "$learned_skills")
+      exp=$(memory_exp "$obs_count" "$learned_rules" "$learned_skills")
       
       echo "──────────────────────────────────────────────"
       echo "🌱 Incubation Progress:"
-      echo "   • Hatch Readiness: ${readiness}%"
+      echo "   • Hatch Readiness: ${readiness}% (need ${MEMORY_HATCH_MIN}%)"
+      echo "   • EXP:             ${exp}"
       echo "   • Learned Rules:   ${learned_rules}"
       echo "   • Learned Moves:   ${learned_skills}"
-      echo "   • Logged Feedback: ${obs_count}"
+      echo "   • Evidence:        ${obs_count} episodes (${corrections} corrections)"
       echo "──────────────────────────────────────────────"
-      echo "💡 Ready to hatch? Run: harnemon hatch <species-name>"
+      if [ "$readiness" -lt "$MEMORY_HATCH_MIN" ]; then
+        echo "💡 Keep teaching it. Record what it learns: harnemon note \"<what you corrected>\""
+      else
+        echo "💡 Ready to hatch! Run: harnemon hatch <species-name>"
+      fi
       return 0
     fi
 
@@ -1798,7 +2161,7 @@ cmd_audit() {
       echo "🥚 Diagnosing Incubating Harnemon Egg..."
       echo "   ✅ Kernel active: incubation-kernel.md"
       echo "   ✅ Self-evolution active: harness-evolution.md"
-      echo "   ✅ Incubation diary: memory/incubation-log.md"
+      echo "   ✅ Episode log: memory/episodes/"
       echo "──────────────────────────────────────────────"
       echo "✨ Harnemon Egg is in prime condition. Keep coding to hatch!"
       return 0
@@ -2003,6 +2366,14 @@ case "${1:-}" in
   draw|art)
     shift
     cmd_draw "$@"
+    ;;
+  note|learn)
+    shift
+    cmd_note "$@"
+    ;;
+  rest|sleep)
+    shift
+    cmd_rest "$@"
     ;;
   feed)
     shift

@@ -5,7 +5,17 @@ set -euo pipefail
 
 VERSION="0.9.3"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+resolve_script_dir() {
+  local src="${BASH_SOURCE[0]}" dir
+  while [ -L "$src" ]; do
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+  done
+  cd -P "$(dirname "$src")/.." && pwd
+}
+
+SCRIPT_DIR="$(resolve_script_dir)"
 GLOBAL_HOME="${HOME}/.harnemon"
 
 show_help() {
@@ -918,25 +928,44 @@ cmd_setup() {
   mkdir -p "$global_agents_dir"
   local global_agents_md="$global_agents_dir/AGENTS.md"
 
-  local harness_rule="""# Global Agent Guidelines (~/.agents/AGENTS.md)
-
+  local harness_rule
+  harness_rule="$(cat << 'AWARENESS'
+<!-- harnemon:begin -->
 ## ⚡ Harnemon Companion (~/.harnemon)
 Autonomous zero-dependency harness companion for AI coding agents.
 
 - **Adopted Workspace**: If `.harnemons/` exists, follow the active partner declared in `.agents/AGENTS.md`.
 - **Unadopted Workspace**: Run `harnemon adopt` or `harnemon incubate` to awaken a companion.
 - **Reference**: Full details and species catalog at `~/.harnemon/README.md`.
-"""
+<!-- harnemon:end -->
+AWARENESS
+)"
 
   if [ ! -f "$global_agents_md" ]; then
-    echo "$harness_rule" > "$global_agents_md"
+    printf '%s\n' "$harness_rule" > "$global_agents_md"
     echo "✅ Inscribed Global Harnemon Awareness to: $global_agents_md"
-  elif ! grep -q "Harnemon Global Awareness" "$global_agents_md"; then
-    echo "" >> "$global_agents_md"
-    echo "$harness_rule" >> "$global_agents_md"
-    echo "✅ Appended Global Harnemon Awareness to: $global_agents_md"
   else
-    echo "ℹ️ Global Harnemon Awareness is already present in: $global_agents_md"
+    local tmp
+    tmp="$(mktemp)"
+    # 이전 판이 남긴 블록과 표식 사이의 블록을 모두 걷어낸 뒤 현재 판을 다시 쓴다
+    awk '
+      /<!-- harnemon:begin -->/ { skip = 1; next }
+      /<!-- harnemon:end -->/   { skip = 0; next }
+      skip { next }
+      /^## .*Harnemon Companion/ { legacy = 1; next }
+      legacy && /^#/            { legacy = 0 }
+      legacy { next }
+      /^#+ *#? *Global Agent Guidelines \(~\/\.agents\/AGENTS\.md\)$/ { next }
+      { print }
+    ' "$global_agents_md" | awk 'NF || prev { print } { prev = NF }' > "$tmp"
+    if [ -s "$tmp" ]; then
+      printf '%s\n\n' "$(cat "$tmp")" > "$global_agents_md"
+    else
+      : > "$global_agents_md"
+    fi
+    printf '%s\n' "$harness_rule" >> "$global_agents_md"
+    rm -f "$tmp"
+    echo "✅ Refreshed Global Harnemon Awareness in: $global_agents_md"
   fi
 
   # 3. Claude Code global link if ~/.claude exists

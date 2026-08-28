@@ -20,7 +20,7 @@ Visual layout and formatting standards for presenting outputs in terminal and ch
 - **List Items**: `- **Item Title** — Description` (Bold is restricted to the section header and item title; use an em-dash `—` only once immediately after the bold title).
 - **File Paths & Code**: Format file paths as clickable Markdown links (`[filename](file:///absolute/path)`). Wrap commands, variables, configuration keys, and code snippets in inline backticks (``).
 - **Closing**: Conclude responses with a clear completion statement or a recommended next action.
-- **Harnemon Signature (하네몬 서명)**: 모든 턴 메시지의 가장 마지막 줄에는 반드시 `-하네몬 {{HARNEMON_SIGNATURE}}-` 형식의 서명을 1줄로 단독 기재하여 작업을 처리한 하네몬을 명시한다.
+- **Harnemon Signature (하네몬 서명)**: 모든 턴 메시지의 가장 마지막 줄에는 반드시 `-Harnemon Fortoise 💧-` 형식의 서명을 1줄로 단독 기재하여 작업을 처리한 하네몬을 명시한다.
 
 ### Output Example
 ```markdown
@@ -34,7 +34,7 @@ Visual layout and formatting standards for presenting outputs in terminal and ch
 
 - Let me know if you would like to proceed with integration testing.
 
--하네몬 {{HARNEMON_SIGNATURE}}-
+-Harnemon Fortoise 💧-
 ```
 
 ---

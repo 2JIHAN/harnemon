@@ -11,11 +11,11 @@ get_species_signature() {
   local type="$3"
 
   case "$species" in
-    nimbleet) echo "님블리트 ⚡" ;;
-    fortoise) echo "포토이즈 💧" ;;
-    monkin) echo "몽킨 🔥" ;;
-    yagni) echo "야그니 🍃" ;;
-    egg) echo "알 🥚" ;;
+    nimbleet) echo "Nimbleet ⚡" ;;
+    fortoise) echo "Fortoise 💧" ;;
+    monkin) echo "Monkin 🔥" ;;
+    yagni) echo "Yagni 🍃" ;;
+    egg) echo "Egg 🥚" ;;
     *)
       local icon="🌟"
       if [[ "$type" == *"⚡"* ]]; then icon="⚡"
@@ -426,9 +426,9 @@ cmd_hatch() {
   local target_fmt="$target_species_dir/rules/terminal-response-format.md"
   if [ -f "$target_fmt" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' "s/-하네몬 .*-/-하네몬 ${hatch_sig}-/g" "$target_fmt" 2>/dev/null || true
+      sed -i '' "s/-[Hh]arnemon .*-/-Harnemon ${hatch_sig}-/g" "$target_fmt" 2>/dev/null || true
     else
-      sed -i "s/-하네몬 .*-/-하네몬 ${hatch_sig}-/g" "$target_fmt" 2>/dev/null || true
+      sed -i "s/-[Hh]arnemon .*-/-Harnemon ${hatch_sig}-/g" "$target_fmt" 2>/dev/null || true
     fi
   fi
 

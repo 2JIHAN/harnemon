@@ -919,7 +919,7 @@ This system is equipped with **Harnemon** (\`~/.harnemon\`), the zero-dependency
 
 ### Workspace Detection & Behavior
 1. **Adopted Repository**: When working in any directory, check if \`.harnemons/\` or \`.agents/AGENTS.md\` exists in the project root.
-   - If present, strictly follow the active partner's rules, specialized skills, and output the required turn signature (\`-하네몬 {이름} {아이콘}-\`).
+   - If present, strictly follow the active partner's abilities (Rules), specialized skills, and output the required turn signature (\`-Harnemon {Name} {Icon}-\`).
 2. **Unadopted Repository**: If no Harnemon is present in the repository, recommend or run \`harnemon adopt\` (or \`harnemon incubate\`) to awaken a companion.
 3. **Core CLI Commands**:
    - \`harnemon adopt [species]\` — Adopt a starter (\`nimbleet ⚡\`, \`fortoise 💧\`, \`monkin 🔥\`, \`yagni 🍃\`) or add to party

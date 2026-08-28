@@ -3,7 +3,7 @@
 # The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.7.0"
+VERSION="0.8.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GLOBAL_HOME="${HOME}/.harnemon"
 
@@ -16,31 +16,34 @@ Usage:
   harnemon <command> [arguments] [options]
 
 Commands:
-  adopt [species] [path]  Adopt a starter Harnemon (1: Nimbleet ⚡, 2: Fortoise 💧, 3: Monkin 🔥, 4: Yagni 🍃)
-  status [path]           Check your adopted partner's profile, abilities, moves, and held items
-  feed [--link] [path]    Feed a Harness Pill to awaken a Harnemon in a target folder
-  link [path]             Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
-  sync [path]             Cross-pollinate: sync locally learned moves back to global Harnedex
-  dex                     Open the Harnedex to inspect the 4 legendary archetypes
-  audit [path]            Diagnose Harnemon health, token bloat, and rule integrity
-  init <name>             Scaffold a new custom Harnemon species repository
-  help, -h                Show this help message
-  version, -v             Show Harnemon version
+  incubate, egg [path]     Awaken a blank Harnemon Egg 🥚 to incubate and evolve via 2-correction feedback
+  hatch <name> [options]   Hatch the incubated egg into a named mature Harnemon species (e.g. Supabird ⚡)
+  register [path]          Register your mature Harnemon species to global Harnedex (~/.harnemon/catalog/)
+  adopt [species] [path]   Adopt a starter (1: Nimbleet ⚡, 2: Fortoise 💧, 3: Monkin 🔥, 4: Yagni 🍃, 0: Egg 🥚)
+  status [path]            Check your adopted partner's profile, abilities, moves, and held items
+  audit [path]             Diagnose Harnemon health, token bloat, and rule integrity
+  feed [--link] [path]     Feed a Harness Pill to awaken a Harnemon in a target folder
+  link [path]              Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
+  sync [path]              Cross-pollinate: sync locally learned moves back to global Harnedex
+  dex                      Open the Harnedex to inspect legendary archetypes and custom species
+  init <name>              Scaffold a new custom Harnemon species repository
+  help, -h                 Show this help message
+  version, -v              Show Harnemon version
 
 The Pokémon Architecture:
   • Global Harnemon = Class / Species (Master blueprint / The species 'Pikachu')
   • Project Harnemon = Instance / Individual (Adopted into this repo to evolve / 'Ash's Pikachu')
+  • Incubation System = Blank Egg (0 rules/skills) ──▶ Hermes 2-Correction Loop ──▶ Mature Hatched Species
   • Zero Dependencies: 100% POSIX Bash & Git, 0 npm/pip/cargo packages required
 
 Examples:
-  harnemon adopt                       # Interactive starter selection (Nimbleet, Fortoise, Monkin, Yagni)
-  harnemon adopt 1                     # Direct adopt: Nimbleet (Electric ⚡)
-  harnemon adopt fortoise              # Direct adopt: Fortoise (Water 💧)
-  harnemon adopt monkin                # Direct adopt: Monkin (Fire 🔥)
-  harnemon adopt yagni                 # Direct adopt: Yagni (Grass 🍃)
-  harnemon status                      # View current partner's profile and moves
+  harnemon incubate                    # Start with a blank egg and evolve it through coding
+  harnemon hatch "Supabird" -t "DB ⚡" # Hatch the mature egg into a custom species
+  harnemon register                    # Save the new species to global Harnedex
+  harnemon adopt                       # Interactive starter selection (Egg or 4 Starters)
+  harnemon status                      # View current partner profile or egg incubation progress
   harnemon audit                       # Health-check your partner
-  harnemon dex                         # Browse the 4 legendary Harnemons
+  harnemon dex                         # Browse Harnedex
 EOF
 }
 
@@ -50,11 +53,11 @@ choose_starter_interactive() {
     "fortoise:💧 Fortoise [Water 💧]    — Giant tool fortress, impenetrable config-guard shell"
     "monkin:🔥 Monkin   [Fire 🔥]     — The Iron Law discipline, burns away guessing with proofs"
     "yagni:🍃 Yagni    [Grass 🍃]    — Ladder of Laziness, prunes code bloat (-N lines)"
+    "egg:🥚 Harnemon Egg [Incubating 🌱] — Blank canvas, self-evolving custom companion"
   )
   local num_options=${#options[@]}
   local selected=0
 
-  # Check if interactive terminal available
   local tty_in="/dev/stdin"
   if [ -t 0 ] && [ -c /dev/tty ]; then
     tty_in="/dev/tty"
@@ -68,7 +71,6 @@ choose_starter_interactive() {
   local DIM="${ESC}[2m"
   local RESET="${ESC}[0m"
 
-  # Trap cursor restoration on interrupt
   trap 'printf "%s" "$SHOW_CURSOR" >&2; exit 1' INT TERM
 
   printf "%s" "$HIDE_CURSOR" >&2
@@ -125,6 +127,7 @@ choose_starter_interactive() {
       2) selected=1; break ;;
       3) selected=2; break ;;
       4) selected=3; break ;;
+      0|5|e|E) selected=4; break ;;
       q|Q)
         printf "%s" "$SHOW_CURSOR" >&2
         echo "Adoption canceled." >&2
@@ -151,26 +154,20 @@ cmd_adopt() {
 
   if [ $# -gt 0 ]; then
     case "$1" in
-      nimbleet|nimbleet)
-        species="nimbleet"
-        shift
-        ;;
-      fortoise)
-        species="fortoise"
-        shift
-        ;;
-      monkin)
-        species="monkin"
-        shift
-        ;;
-      yagni)
-        species="yagni"
-        shift
-        ;;
+      nimbleet) species="nimbleet"; shift ;;
+      fortoise) species="fortoise"; shift ;;
+      monkin) species="monkin"; shift ;;
+      yagni) species="yagni"; shift ;;
+      egg) species="egg"; shift ;;
       1) species="nimbleet"; shift ;;
       2) species="fortoise"; shift ;;
       3) species="monkin"; shift ;;
       4) species="yagni"; shift ;;
+      0|5) species="egg"; shift ;;
+      *)
+        species="$1"
+        shift
+        ;;
     esac
   fi
 
@@ -182,12 +179,17 @@ cmd_adopt() {
     species="$(choose_starter_interactive)"
   fi
 
+  if [ "$species" = "egg" ]; then
+    cmd_incubate "$target_dir"
+    return 0
+  fi
+
   local species_name=""
   local species_type=""
   local species_desc=""
 
   case "$species" in
-    nimbleet|nimbleet)
+    nimbleet)
       species_name="Nimbleet"
       species_type="Electric ⚡"
       species_desc="50-token skill router, ultralight zero-dependency minimal speedster"
@@ -207,6 +209,18 @@ cmd_adopt() {
       species_type="Grass 🍃"
       species_desc="Ladder of Laziness, prunes dead code, slashes complexity (-N lines)"
       ;;
+    *)
+      local cat_json="$GLOBAL_HOME/catalog/$species/partner.json"
+      if [ -f "$cat_json" ]; then
+        species_name=$(grep -o '"name": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        species_type=$(grep -o '"type": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        species_desc=$(grep -o '"description": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+      else
+        species_name="$(echo "$species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
+        species_type="Custom 🌟"
+        species_desc="Custom Harnemon companion"
+      fi
+      ;;
   esac
 
   echo ""
@@ -214,8 +228,264 @@ cmd_adopt() {
   echo "   Trait: $species_desc"
   echo ""
 
-  # Adopt creates an autonomous instance (real files in .agents/, zero global pollution)
   cmd_feed "$target_dir" "$species" "$species_name" "$species_type" "$species_desc"
+}
+
+cmd_incubate() {
+  local target_dir="${1:-.}"
+  mkdir -p "$target_dir"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo ""
+  echo "🥚 [Harnemon Incubator] Awakening a Blank Harnemon Egg in: $target_dir"
+  echo "   🐾 Partner: Harnemon Egg 🥚 [Incubating 🌱]"
+  echo "   Trait: A blank canvas absorbing your coding habits, stack conventions, and 2-correction feedback."
+  echo "──────────────────────────────────────────────"
+
+  local base_source="$SCRIPT_DIR"
+  if [ -d "$GLOBAL_HOME/templates/egg" ]; then
+    base_source="$GLOBAL_HOME"
+  fi
+
+  local egg_template="$base_source/templates/egg"
+  if [ ! -d "$egg_template" ]; then
+    echo "❌ Error: Egg template not found at $egg_template"
+    exit 1
+  fi
+
+  local harnemons_dir="$target_dir/.harnemons"
+  mkdir -p "$harnemons_dir"
+  local species_dir="$harnemons_dir/egg"
+  rm -rf "$species_dir"
+  mkdir -p "$species_dir"
+
+  cp -R "$egg_template/"* "$species_dir/"
+
+  cat << EOF > "$harnemons_dir/partner.json"
+{
+  "species": "egg",
+  "name": "Harnemon Egg",
+  "type": "Incubating 🌱",
+  "description": "A blank canvas absorbing developer feedback and conventions to hatch a custom species",
+  "status": "incubating",
+  "exp": 0,
+  "hatch_readiness": "0%",
+  "adopted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  if [ -d "$target_dir/.git" ]; then
+    local gitignore="$target_dir/.gitignore"
+    [ ! -f "$gitignore" ] && touch "$gitignore"
+    local entries=(".harnemons/" ".claude/" ".gemini/" ".agents/")
+    for entry in "${entries[@]}"; do
+      if ! grep -q "^${entry}" "$gitignore" 2>/dev/null; then
+        echo "$entry" >> "$gitignore"
+      fi
+    done
+  fi
+
+  echo "🔌 Wiring AI Providers (.agents/, .claude/, .gemini/)..."
+  mkdir -p "$target_dir/.agents" "$target_dir/.claude" "$target_dir/.gemini"
+
+  rm -rf "$target_dir/.agents/skills"
+  ln -sf "../.harnemons/egg/skills" "$target_dir/.agents/skills"
+
+  rm -rf "$target_dir/.claude/skills"
+  ln -sf "../.harnemons/egg/skills" "$target_dir/.claude/skills"
+
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  cat << EOF > "$agents_md"
+# Harnemon Operating Rules (AGENTS.md)
+
+**Partner**: Harnemon Egg 🥚 [Incubating 🌱]
+**Species**: egg (Incubating)
+**Description**: A blank canvas absorbing developer feedback and conventions to hatch a custom species
+
+This project is incubating a raw Harnemon Egg with the 3 Pillars (Rule, Skill, Hook).
+
+## Active Abilities (Rules)
+EOF
+  for rf in "$species_dir/rules/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    echo "@../.harnemons/egg/rules/$bname" >> "$agents_md"
+    echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
+  done
+
+  cat << EOF >> "$agents_md"
+
+## Learned Moves (Skills Catalog)
+@../.harnemons/egg/skills/INDEX.md
+EOF
+
+  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+
+  echo "──────────────────────────────────────────────"
+  echo "✨ [Harnemon Incubator] Egg is now active!"
+  echo "   • Start coding as usual. Whenever you correct the agent or set conventions,"
+  echo "     the incubation engine will absorb it and increase Hatch Readiness."
+  echo "   • When ready to hatch, run: harnemon hatch <species-name>"
+}
+
+cmd_hatch() {
+  local species_name="${1:-}"
+  local p_type="Custom 🌟"
+  local p_desc=""
+  local target_dir="."
+
+  if [ -z "$species_name" ]; then
+    echo "❌ Error: Please specify a species name for the hatched Harnemon."
+    echo "   Usage: harnemon hatch <species-name> [--type <type>] [--desc <description>] [path]"
+    exit 1
+  fi
+  shift
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --type|-t)
+        p_type="$2"
+        shift 2
+        ;;
+      --desc|-d)
+        p_desc="$2"
+        shift 2
+        ;;
+      *)
+        target_dir="$1"
+        shift
+        ;;
+    esac
+  done
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+  local egg_dir="$harnemons_dir/egg"
+
+  if [ ! -d "$egg_dir" ]; then
+    echo "❌ Error: No incubating egg found at $harnemons_dir/egg."
+    echo "   To start incubating an egg first, run: harnemon incubate"
+    exit 1
+  fi
+
+  local clean_species
+  clean_species="$(echo "$species_name" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+  local display_name
+  display_name="$(echo "$species_name" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
+
+  if [ -z "$p_desc" ]; then
+    p_desc="Autonomous custom Harnemon hatched and forged in $(basename "$target_dir")"
+  fi
+
+  local target_species_dir="$harnemons_dir/$clean_species"
+  if [ -d "$target_species_dir" ]; then
+    echo "⚠️ Target species directory '$target_species_dir' already exists. Overwriting..."
+    rm -rf "$target_species_dir"
+  fi
+
+  mv "$egg_dir" "$target_species_dir"
+  rm -f "$target_species_dir/rules/incubation-kernel.md"
+
+  cat << EOF > "$harnemons_dir/partner.json"
+{
+  "species": "$clean_species",
+  "name": "$display_name",
+  "type": "$p_type",
+  "description": "$p_desc",
+  "status": "mature",
+  "hatched_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  rm -rf "$target_dir/.agents/skills"
+  ln -sf "../.harnemons/$clean_species/skills" "$target_dir/.agents/skills"
+
+  rm -rf "$target_dir/.claude/skills"
+  ln -sf "../.harnemons/$clean_species/skills" "$target_dir/.claude/skills"
+
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  cat << EOF > "$agents_md"
+# Harnemon Operating Rules (AGENTS.md)
+
+**Partner**: $display_name [$p_type]
+**Species**: $clean_species
+**Description**: $p_desc
+
+This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
+
+## Active Abilities (Rules)
+EOF
+  for rf in "$target_species_dir/rules/"*.md; do
+    [ -f "$rf" ] || continue
+    local bname
+    bname="$(basename "$rf")"
+    echo "@../.harnemons/$clean_species/rules/$bname" >> "$agents_md"
+  done
+
+  cat << EOF >> "$agents_md"
+
+## Learned Moves (Skills Catalog)
+@../.harnemons/$clean_species/skills/INDEX.md
+EOF
+
+  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
+  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+
+  echo ""
+  echo "✨🐣 CRACK! The Harnemon Egg has hatched! 🐣✨"
+  echo "──────────────────────────────────────────────"
+  echo "🎉 Congratulations! '$display_name [$p_type]' is born!"
+  echo "   Trait:   $p_desc"
+  echo "   Home:    .harnemons/$clean_species/"
+  echo "──────────────────────────────────────────────"
+  echo "📜 Active Abilities:"
+  for r in "$target_species_dir/rules/"*.md; do
+    [ -f "$r" ] || continue
+    echo "   • $(basename "$r" .md)"
+  done
+  echo "🧰 Learned Moves:"
+  for s in "$target_species_dir/skills/"*; do
+    [ -d "$s" ] || continue
+    echo "   • $(basename "$s")"
+  done
+  echo "──────────────────────────────────────────────"
+  echo "🚀 Run 'harnemon register' to add $display_name to the global Harnedex!"
+}
+
+cmd_register() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+  local partner_file="$harnemons_dir/partner.json"
+
+  if [ ! -f "$partner_file" ]; then
+    echo "❌ Error: No partner.json found in $harnemons_dir."
+    exit 1
+  fi
+
+  local species p_name p_type p_desc
+  species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+  p_name=$(grep -o '"name": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+  p_type=$(grep -o '"type": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+  p_desc=$(grep -o '"description": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+
+  if [ "$species" = "egg" ]; then
+    echo "❌ Error: Cannot register an unhatched egg. Run 'harnemon hatch <name>' first!"
+    exit 1
+  fi
+
+  local global_catalog="$GLOBAL_HOME/catalog/$species"
+  mkdir -p "$global_catalog"
+  cp -R "$harnemons_dir/$species/"* "$global_catalog/"
+  cp "$partner_file" "$global_catalog/partner.json"
+
+  echo ""
+  echo "📖 [Harnedex Registry] Registered '$p_name [$p_type]' to global catalog!"
+  echo "   Saved at: $global_catalog"
+  echo "   All other repositories can now adopt this species with:"
+  echo "   ❯ harnemon adopt $species"
 }
 
 cmd_status() {
@@ -232,12 +502,58 @@ cmd_status() {
   fi
 
   local species="nimbleet"
+  local p_status="mature"
   if [ -n "$partner_file" ]; then
     local p_name p_type p_desc
     species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
     p_name=$(grep -o '"name": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
     p_type=$(grep -o '"type": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
     p_desc=$(grep -o '"description": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    p_status=$(grep -o '"status": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4 || echo "mature")
+
+    if [ "$species" = "egg" ] || [ "$p_status" = "incubating" ]; then
+      echo "🐾 Partner: Harnemon Egg 🥚 [Incubating 🌱]"
+      echo "   Trait:   $p_desc"
+      echo "   Home:    .harnemons/egg/"
+      
+      local log_file="$target_dir/.harnemons/egg/memory/incubation-log.md"
+      local obs_count=0
+      if [ -f "$log_file" ]; then
+        obs_count=$(grep -c "^- " "$log_file" 2>/dev/null || echo "0")
+      fi
+      local learned_rules=0
+      for r in "$target_dir/.harnemons/egg/rules/"*.md; do
+        [ -f "$r" ] || continue
+        local bn
+        bn=$(basename "$r")
+        if [ "$bn" != "incubation-kernel.md" ] && [ "$bn" != "harness-evolution.md" ]; then
+          learned_rules=$((learned_rules + 1))
+        fi
+      done
+      local learned_skills=0
+      for s in "$target_dir/.harnemons/egg/skills/"*; do
+        [ -d "$s" ] || continue
+        local sn
+        sn=$(basename "$s")
+        if [ "$sn" != "harness-evolution" ]; then
+          learned_skills=$((learned_skills + 1))
+        fi
+      done
+      
+      local readiness=$(( (learned_rules * 25) + (learned_skills * 25) + (obs_count * 10) ))
+      [ "$readiness" -gt 100 ] && readiness=100
+      
+      echo "──────────────────────────────────────────────"
+      echo "🌱 Incubation Progress:"
+      echo "   • Hatch Readiness: ${readiness}%"
+      echo "   • Learned Rules:   ${learned_rules}"
+      echo "   • Learned Moves:   ${learned_skills}"
+      echo "   • Logged Feedback: ${obs_count}"
+      echo "──────────────────────────────────────────────"
+      echo "💡 Ready to hatch? Run: harnemon hatch <species-name>"
+      return 0
+    fi
+
     echo "🐾 Partner: $p_name [$p_type]"
     echo "   Trait:   $p_desc"
     [ -d "$target_dir/.harnemons/$species" ] && echo "   Home:    .harnemons/$species/"
@@ -332,13 +648,15 @@ cmd_feed() {
     base_source="$GLOBAL_HOME"
   fi
 
-  # 1. Create .harnemons directory and species subfolder
+  if [ -d "$GLOBAL_HOME/catalog/$p_species" ]; then
+    base_source="$GLOBAL_HOME/catalog/$p_species"
+  fi
+
   local harnemons_dir="$target_dir/.harnemons"
   mkdir -p "$harnemons_dir"
   local species_dir="$harnemons_dir/$p_species"
   mkdir -p "$species_dir"
 
-  # Save partner.json directly under .harnemons/
   cat << EOF > "$harnemons_dir/partner.json"
 {
   "species": "$p_species",
@@ -349,11 +667,12 @@ cmd_feed() {
 }
 EOF
 
-  # 2. Put abilities (rules) under .harnemons/<species>/rules
   echo "📜 Bestowing Abilities (Rules)..."
   local rules_target="$species_dir/rules"
   mkdir -p "$rules_target"
-  for rf in "$base_source/rules/"*.md; do
+  local rules_src="$base_source/rules"
+  [ ! -d "$rules_src" ] && rules_src="$SCRIPT_DIR/rules"
+  for rf in "$rules_src/"*.md; do
     [ -f "$rf" ] || continue
     local bname
     bname="$(basename "$rf")"
@@ -361,11 +680,12 @@ EOF
     echo "   📄 Installed ability: .harnemons/$p_species/rules/$bname"
   done
 
-  # 3. Put moves (skills) under .harnemons/<species>/skills (including INDEX.md!)
   echo "🧰 Imprinting Moves (Skills)..."
   local skills_target="$species_dir/skills"
   mkdir -p "$skills_target"
-  for sd in "$base_source/skills/"*; do
+  local skills_src="$base_source/skills"
+  [ ! -d "$skills_src" ] && skills_src="$SCRIPT_DIR/skills"
+  for sd in "$skills_src/"*; do
     local sname
     sname="$(basename "$sd")"
     if [ -d "$sd" ]; then
@@ -376,20 +696,19 @@ EOF
       cp "$sd" "$skills_target/$sname"
     fi
   done
-  if [ -f "$base_source/skills/INDEX.md" ]; then
-    cp "$base_source/skills/INDEX.md" "$skills_target/INDEX.md"
+  if [ -f "$skills_src/INDEX.md" ]; then
+    cp "$skills_src/INDEX.md" "$skills_target/INDEX.md"
     echo "   📋 Indexed catalog: .harnemons/$p_species/skills/INDEX.md"
   fi
 
-  # 4. Install Git Hooks (Held Items) & .gitignore
   if [ -d "$target_dir/.git" ]; then
     echo "🪝 Equipping Held Items (Git Hooks)..."
     local hooks_copy="$species_dir/hooks"
     mkdir -p "$hooks_copy"
-    if [ -d "$base_source/hooks" ]; then
-      cp -R "$base_source/hooks/"* "$hooks_copy/" 2>/dev/null || true
-      if [ -f "$base_source/hooks/install.sh" ]; then
-        bash "$base_source/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
+    if [ -d "$SCRIPT_DIR/hooks" ]; then
+      cp -R "$SCRIPT_DIR/hooks/"* "$hooks_copy/" 2>/dev/null || true
+      if [ -f "$SCRIPT_DIR/hooks/install.sh" ]; then
+        bash "$SCRIPT_DIR/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
       fi
     fi
     git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
@@ -419,21 +738,17 @@ EOF
     fi
   fi
 
-  # 5. Wire AI Providers (.agents/, .claude/, .gemini/)
   echo "🔌 Wiring AI Providers (.agents/, .claude/, .gemini/)..."
   mkdir -p "$target_dir/.agents" "$target_dir/.claude" "$target_dir/.gemini"
 
-  # Symlink .agents/skills -> ../.harnemons/<species>/skills
   rm -rf "$target_dir/.agents/skills"
   ln -sf "../.harnemons/$p_species/skills" "$target_dir/.agents/skills"
   echo "   🔌 Wired: .agents/skills -> ../.harnemons/$p_species/skills"
 
-  # Symlink .claude/skills -> ../.harnemons/<species>/skills (Claude Code Native Discovery)
   rm -rf "$target_dir/.claude/skills"
   ln -sf "../.harnemons/$p_species/skills" "$target_dir/.claude/skills"
   echo "   🔌 Wired: .claude/skills -> ../.harnemons/$p_species/skills (Claude Code Native Scan)"
 
-  # Auto-wire AGENTS.md
   local agents_md="$target_dir/.agents/AGENTS.md"
   cat << EOF > "$agents_md"
 # Harnemon Operating Rules (AGENTS.md)
@@ -461,7 +776,6 @@ EOF
 EOF
   echo "   📋 Wired 'skills/INDEX.md' into .agents/AGENTS.md"
 
-  # Wire Claude and Gemini configs
   echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
   echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
   echo "   🔌 Wired: .claude/CLAUDE.md & .gemini/GEMINI.md -> .agents/AGENTS.md"
@@ -543,74 +857,6 @@ cmd_init() {
     cp -R "$SCRIPT_DIR/hooks/"* "$target_dir/hooks/" 2>/dev/null || true
   fi
 
-  cat << 'EOF' > "$target_dir/install.sh"
-#!/usr/bin/env bash
-# install.sh — Idempotent installer for Harnemon
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="${1:-.}"
-TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
-
-echo "⚡ Awakening Harnemon in: $TARGET_DIR"
-
-if [ -d "$TARGET_DIR/.git" ]; then
-  mkdir -p "$TARGET_DIR/.git/hooks"
-  [ -f "$SCRIPT_DIR/hooks/commit-msg/commit-msg" ] && cp "$SCRIPT_DIR/hooks/commit-msg/commit-msg" "$TARGET_DIR/.git/hooks/commit-msg"
-  [ -f "$SCRIPT_DIR/hooks/pre-commit/pre-commit" ] && cp "$SCRIPT_DIR/hooks/pre-commit/pre-commit" "$TARGET_DIR/.git/hooks/pre-commit"
-  chmod +x "$TARGET_DIR/.git/hooks/"* 2>/dev/null || true
-  git -C "$TARGET_DIR" config core.hooksPath .git/hooks 2>/dev/null || true
-fi
-
-mkdir -p "$TARGET_DIR/.agents/rules"
-cp "$SCRIPT_DIR/rules/"*.md "$TARGET_DIR/.agents/rules/" 2>/dev/null || true
-
-AGENTS_MD="$TARGET_DIR/.agents/AGENTS.md"
-[ ! -f "$AGENTS_MD" ] && touch "$AGENTS_MD"
-
-for rule in "$TARGET_DIR/.agents/rules/"*.md; do
-  [ -f "$rule" ] || continue
-  base="$(basename "$rule")"
-  if ! grep -q "@rules/$base" "$AGENTS_MD"; then
-    echo "@rules/$base" >> "$AGENTS_MD"
-  fi
-done
-
-mkdir -p "$TARGET_DIR/.claude" "$TARGET_DIR/.gemini"
-[ ! -f "$TARGET_DIR/.claude/CLAUDE.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.claude/CLAUDE.md"
-[ ! -f "$TARGET_DIR/.gemini/GEMINI.md" ] && echo "@../.agents/AGENTS.md" > "$TARGET_DIR/.gemini/GEMINI.md"
-
-mkdir -p "$TARGET_DIR/.agents/skills"
-for sd in "$SCRIPT_DIR/skills/"*; do
-  [ -d "$sd" ] || continue
-  sname="$(basename "$sd")"
-  mkdir -p "$TARGET_DIR/.agents/skills/$sname"
-  cp -R "$sd/"* "$TARGET_DIR/.agents/skills/$sname/"
-done
-ln -sf "../.agents/skills" "$TARGET_DIR/.claude/skills" 2>/dev/null || true
-
-echo "✨ Harnemon awakened successfully with ZERO project dependencies."
-EOF
-  chmod +x "$target_dir/install.sh"
-
-  cat << EOF > "$target_dir/README.md"
-# $base_name
-
-A custom Harnemon species built with [Harnemon](https://github.com/2JIHAN/harnemon).
-
-## Harnemon Spec (Zero Build Dependencies)
-
-- **Abilities (\`rules/\`)** — Operational standards, skill routing, and self-evolution
-- **Moves (\`skills/\`)** — On-demand capabilities and evolution playbook
-- **Held Items (\`hooks/\`)** — Git-level deterministic hard gates (Pure Bash)
-
-## Feed & Awaken
-
-\`\`\`bash
-./install.sh /path/to/target-project
-\`\`\`
-EOF
-
   echo "✨ Harnemon '$base_name' bred successfully at $target_dir"
 }
 
@@ -621,9 +867,23 @@ cmd_audit() {
   echo "🔍 [Harnemon Health] Diagnosing Harnemon at: $target_dir"
   echo "──────────────────────────────────────────────"
 
+  local partner_file="$target_dir/.harnemons/partner.json"
+  if [ -f "$partner_file" ]; then
+    local p_species
+    p_species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    if [ "$p_species" = "egg" ]; then
+      echo "🥚 Diagnosing Incubating Harnemon Egg..."
+      echo "   ✅ Kernel active: incubation-kernel.md"
+      echo "   ✅ Self-evolution active: harness-evolution.md"
+      echo "   ✅ Incubation diary: memory/incubation-log.md"
+      echo "──────────────────────────────────────────────"
+      echo "✨ Harnemon Egg is in prime condition. Keep coding to hatch!"
+      return 0
+    fi
+  fi
+
   local issues=0
 
-  # 1. Check Rules (Abilities)
   echo "📜 Checking Abilities (Rules)..."
   local rules_dir="$target_dir/rules"
   if [ ! -d "$rules_dir" ]; then
@@ -668,7 +928,6 @@ cmd_audit() {
     echo "   ℹ️  Self-evolution ability not found. Harnemon cannot autonomously evolve."
   fi
 
-  # 2. Check Skills (Moves)
   echo "🧰 Checking Learned Moves (Skills)..."
   local skills_dir="$target_dir/skills"
   if [ ! -d "$skills_dir" ]; then
@@ -701,7 +960,6 @@ cmd_audit() {
     echo "   ℹ️  No skills found."
   fi
 
-  # 3. Check Hooks (Held Items)
   echo "🪝 Checking Held Items (Hooks)..."
   local hooks_dir="$target_dir/hooks"
   if [ ! -d "$hooks_dir" ] && [ -d "$target_dir/.git/hooks" ]; then
@@ -736,8 +994,11 @@ cmd_audit() {
 }
 
 cmd_dex() {
-  echo "📖 [Harnedex] Legendary Gen-1 Harnemon Archetypes"
+  echo "📖 [Harnedex] Legendary Gen-1 Harnemon Archetypes & Custom Species"
   echo "──────────────────────────────────────────────"
+  echo "No.000 Harnemon Egg — Incubating 🌱"
+  echo "       • Blank canvas starter absorbing developer habits and 2-correction feedback"
+  echo ""
   echo "No.001 Nimbleet    — Electric Type ⚡"
   echo "       • Jihan Harness: 50-token skill router, zero-dependency root-clean"
   echo "       • Entry: docs/case-studies/01-jihan-harness.md"
@@ -753,6 +1014,24 @@ cmd_dex() {
   echo "No.004 Yagni       — Grass Type 🍃"
   echo "       • Ponytail: Ladder of Laziness, complexity pruning (-N lines)"
   echo "       • Entry: docs/case-studies/04-dietrich-ponytail.md"
+
+  if [ -d "$GLOBAL_HOME/catalog" ]; then
+    for cd in "$GLOBAL_HOME/catalog/"*; do
+      [ -d "$cd" ] || continue
+      local cname
+      cname="$(basename "$cd")"
+      local cat_json="$cd/partner.json"
+      if [ -f "$cat_json" ]; then
+        local cn ct cd_desc
+        cn=$(grep -o '"name": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        ct=$(grep -o '"type": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        cd_desc=$(grep -o '"description": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
+        echo ""
+        echo "🌟 Custom: $cn — $ct"
+        echo "       • $cd_desc"
+      fi
+    done
+  fi
   echo "──────────────────────────────────────────────"
   echo "Inspect detailed entries in $SCRIPT_DIR/docs/case-studies/"
 }
@@ -761,6 +1040,18 @@ case "${1:-}" in
   adopt)
     shift
     cmd_adopt "$@"
+    ;;
+  incubate|egg)
+    shift
+    cmd_incubate "$@"
+    ;;
+  hatch)
+    shift
+    cmd_hatch "$@"
+    ;;
+  register)
+    shift
+    cmd_register "$@"
     ;;
   status)
     shift

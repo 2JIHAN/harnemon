@@ -12,7 +12,7 @@
 [![Zero-Dependency](https://img.shields.io/badge/Dependencies-Zero-success.svg?style=for-the-badge)](#-the-3-invariants)
 [![Runtime: Pure POSIX Bash](https://img.shields.io/badge/Runtime-Pure_POSIX_Bash-orange.svg?style=for-the-badge)](#-the-3-invariants)
 [![Architecture: 3 Pillars](https://img.shields.io/badge/Architecture-3_Pillars-purple.svg?style=for-the-badge)](#-the-3-pillars)
-[![Evolution: Self-Evolving](https://img.shields.io/badge/Evolution-Hermetic_Learning-red.svg?style=for-the-badge)](#-self-evolution-engine-powered-by-hermes--grok-bot)
+[![Evolution: Self-Evolving](https://img.shields.io/badge/Evolution-Hermetic_Learning-red.svg?style=for-the-badge)](#-self-evolution--incubating-engine)
 
 <br/>
 
@@ -21,12 +21,12 @@
        │   🌐 GLOBAL HARNEMON (Class / Species)                       │
        │   ~/.harnemon/ (Nimbleet, Fortoise, Monkin, Yagni Blueprints)│
        └──────────────────────────────────────────────────────────────┘
-                                      │
-                   harnemon adopt     │  (Adoption / Instantiation)
-                                      ▼
+                    │                                 ▲
+     harnemon adopt │                                 │ harnemon register
+                    ▼                                 │
        ┌──────────────────────────────────────────────────────────────┐
        │   🏠 PROJECT HARNEMON (Instance / Individual)                │
-       │   /my-project/.agents/ (A living partner evolving with repo) │
+       │   /my-project/.harnemons/ (An adopted or hatched partner)   │
        └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -34,7 +34,7 @@
 
 ---
 
-## 🌟 The Philosophy: Class vs. Instance
+## 🌟 The Philosophy: Class vs. Instance & Incubator
 
 Traditional AI harnesses either copy-paste monolithic prompt blobs across repositories or burden projects with heavy npm/pip dependencies. **Harnemon solves this through the object-oriented Class/Instance paradigm, styled after the world of Pokémon.**
 
@@ -47,14 +47,20 @@ Traditional AI harnesses either copy-paste monolithic prompt blobs across reposi
 - Just as **Ash's Pikachu** journeyed alongside Ash to master unique combat moves, your adopted Harnemon **absorbs your repo's domain conventions, architectural quirks, and bug history to evolve autonomously (Self-Evolution)**.
 - **Zero-Dependency Footprint**: Leaves **0 bytes** in `package.json`, `Cargo.toml`, or `pyproject.toml`. Harnemon runs purely on native POSIX Bash and standard Git.
 
+### 3. The Harnemon Incubator (Blank Egg 🥚)
+- Don't want pre-packaged rules? Run `harnemon incubate` to start with a **completely blank Egg**.
+- As you code and provide feedback (The 2-Correction Rule), the Egg automatically synthesizes 3-Pillar rules/skills and accumulates EXP.
+- When mature, run `harnemon hatch <name>` to birth your own custom species, and `harnemon register` to save it to your global Harnedex!
+
 ---
 
 ## 📖 Harnedex — The 4 Legendary Gen-1 Archetypes
 
-Harnemon comes equipped with 4 archetypal species inspired by classic Gen-1 Pokémon starters. Choose the companion that matches your team's engineering mindset:
+Harnemon comes equipped with 4 archetypal species inspired by classic Gen-1 Pokémon starters:
 
 | No. | Species | Gen-1 Type | Real-World Origin | Signature Trait & Core Moves |
 | :---: | :--- | :--- | :--- | :--- |
+| **No.000** | **[Harnemon Egg](docs/harnemon-incubator.md)** | `Incubating 🌱` | `Harnemon Incubator` | **Trait: Blank Canvas**<br>0-rule starter. Absorbs developer habits and 2-correction feedback to hatch a custom species. |
 | **No.001** | **[Nimbleet](docs/case-studies/01-jihan-harness.md)** | `Electric ⚡` | `2JIHAN/jihan-harness` | **Trait: Lightning Router**<br>Ultra-fast 50-token Skill Router. Lightning-fast response, zero-dependency root-clean agility. |
 | **No.002** | **[Fortoise](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **Trait: Config-Guard Shell**<br>A colossal fortress of 288 moves. Hard-blocks any sneaky attempt by AI to weaken linter/formatter rules. |
 | **No.003** | **[Monkin](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **Trait: The Iron Law Crucible**<br>Practitioner of *The Iron Law*. Burns away guesswork; strictly forbids touching code until root causes are proven. |
@@ -103,36 +109,49 @@ git clone https://github.com/2JIHAN/harnemon.git ~/.harnemon
 ln -sf ~/.harnemon/bin/harnemon ~/.local/bin/harnemon
 ```
 
-### 2. Adopt a Starter Harnemon (`adopt`)
-Navigate to any project directory and run `harnemon adopt`:
+### 2. Adopt a Starter or Incubate a Blank Egg
+Navigate to any project directory:
 ```bash
 cd /path/to/my-project
 
-# Interactive Professor Oak starter selection dialog:
+# Option A: Start from a Blank Egg (Incubation mode — evolves through coding):
+harnemon incubate
+
+# Option B: Interactive starter selection dialog:
 harnemon adopt
 
-# Or directly adopt by species:
+# Option C: Directly adopt by species:
 harnemon adopt nimbleet   # Electric ⚡ (Fast skill router)
 harnemon adopt fortoise   # Water 💧    (Config guardian shell)
 harnemon adopt monkin     # Fire 🔥     (The Iron Law debugging)
 harnemon adopt yagni      # Grass 🍃    (Ladder of Laziness)
 ```
 
-### 3. Inspect Partner Status & Health
+### 3. Hatch & Register Your Custom Species
+Once your incubated egg matures through feedback loops:
 ```bash
-# 1. View your adopted partner's profile, abilities, moves, and held items
+# Hatch into a named custom species:
+harnemon hatch "Supabird" --type "Database ⚡" --desc "Supabase RLS & Edge Function Master"
+
+# Register to global Harnedex so all your projects can adopt it:
+harnemon register
+```
+
+### 4. Inspect Partner Status & Health
+```bash
+# 1. View your adopted partner profile or egg incubation progress
 harnemon status
 
 # 2. Diagnose token health, rule bloat, and hook executability
 harnemon audit
 
-# 3. Browse the legendary Harnedex archetypes
+# 3. Browse the legendary Harnedex archetypes & custom species
 harnemon dex
 ```
 
 ---
 
-## 🧬 Self-Evolution Engine (Powered by Hermes + Grok Bot)
+## 🧬 Self-Evolution & Incubating Engine
 
 Your adopted Harnemon doesn't stay static—it learns and evolves as you code together:
 
@@ -143,7 +162,7 @@ Your adopted Harnemon doesn't stay static—it learns and evolves as you code to
 ```
 
 - **The 2-Correction Rule**: When a developer corrects a behavior or explains a convention twice, Harnemon flags it for codification.
-- **Autonomous Skill Synthesis (Hermes Loop)**: Harnemon abstracts the solution and writes `.agents/skills/<new-move>/SKILL.md` autonomously.
+- **Autonomous Skill Synthesis (Hermes Loop)**: Harnemon abstracts the solution and writes `skills/<new-move>/SKILL.md` autonomously.
 - **Cross-Pollination (`sync`)**: New moves learned in Project A can be synced back to the global belt to empower Harnemons in other repos:
   ```bash
   harnemon sync
@@ -176,10 +195,13 @@ harnemon/
 ├── hooks/                                   # [Held Items: Git Hard Gates]
 │   ├── commit-msg/                          # • 72-char limit & AI signature blocker
 │   └── pre-commit/                          # • Config weakening & secret leak blocker
+├── templates/                               # [Templates: Starters & Incubator]
+│   └── egg/                                 # • Blank canvas egg starter
 ├── docs/                                    # [Harnedex & Theory]
 │   ├── what-is-a-harness.md                 # • Harness vs prompt definition
 │   ├── maturity-model.md                    # • 5-stage harness maturity framework
 │   ├── three-pillars-and-invariants.md      # • 3 Pillars & Invariants specification
+│   ├── harnemon-incubator.md                # • Incubator & Hatching system guide
 │   └── case-studies/                        # • Detailed Harnedex archetype entries
 └── README.md
 ```

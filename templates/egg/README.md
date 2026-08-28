@@ -25,7 +25,7 @@
 - **`harness-evolution/`** — Autonomous skill synthesis playbook
 
 ### 🧠 Memory
-- **`incubation-log.md`** — Chronological diary of absorbed conventions and EXP progression
+- **`episodes/`** — Append-only log of absorbed corrections and conventions; the evidence a hatch is judged on
 
 ---
 

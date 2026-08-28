@@ -27,6 +27,7 @@ Commands:
   hatch <name> [options]   Hatch the incubated egg into a named mature Harnemon species (e.g. Supabird ⚡)
   register [path]          Register your mature Harnemon species to global Harnedex (~/.harnemon/catalog/)
   status [path]            Check your active partner & party profile, abilities, and moves
+  draw [species] [path]    Draw the partner sprite: writes sprite.json & avatar.svg, prints it in color
   audit [path]             Diagnose Harnemon health, token bloat, and rule integrity
   feed [--link] [path]     Feed a Harness Pill to awaken a Harnemon in a target folder
   link [path]              Zero-dependency link: bind project to global Harnemon belt (~/.harnemon)
@@ -48,6 +49,7 @@ Examples:
   harnemon register                    # Save the new species to global Harnedex
   harnemon adopt                       # Interactive starter selection (Egg or 4 Starters)
   harnemon status                      # View current partner profile or egg incubation progress
+  harnemon draw --force                # Redraw the partner sprite from scratch
   harnemon audit                       # Health-check your partner
   harnemon dex                         # Browse Harnedex
 EOF
@@ -267,9 +269,12 @@ cmd_incubate() {
 
   cp -R "$egg_template/"* "$species_dir/"
 
+  sprite_write "$species_dir" "egg" "Egg 🥚" 64 2>/dev/null || true
+
   cat << EOF > "$harnemons_dir/partner.json"
 {
   "species": "egg",
+  "avatar": "egg/avatar.svg",
   "name": "Harnemon Egg",
   "type": "Incubating 🌱",
   "description": "A blank canvas absorbing developer feedback and conventions to hatch a custom species",
@@ -329,8 +334,11 @@ EOF
   echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
   echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
 
+  sprite_write "$species_dir" "egg" "Egg 🥚" 64 2>/dev/null || true
+
   echo "──────────────────────────────────────────────"
   echo "✨ [Harnemon Incubator] Egg is now active!"
+  sprite_show "$species_dir/sprite.json" 26 "   "
   echo "   • Start coding as usual. Whenever you correct the agent or set conventions,"
   echo "     the incubation engine will absorb it and increase Hatch Readiness."
   echo "   • When ready to hatch, run: harnemon hatch <species-name>"
@@ -395,9 +403,12 @@ cmd_hatch() {
   mv "$egg_dir" "$target_species_dir"
   rm -f "$target_species_dir/rules/incubation-kernel.md"
 
+  sprite_write "$target_species_dir" "$clean_species" "$p_type" 64 2>/dev/null || true
+
   cat << EOF > "$harnemons_dir/partner.json"
 {
   "species": "$clean_species",
+  "avatar": "$clean_species/avatar.svg",
   "name": "$display_name",
   "type": "$p_type",
   "description": "$p_desc",
@@ -443,6 +454,8 @@ EOF
   echo ""
   echo "✨🐣 CRACK! The Harnemon Egg has hatched! 🐣✨"
   echo "──────────────────────────────────────────────"
+  sprite_show "$target_species_dir/sprite.json" 32 "   "
+  echo ""
   echo "🎉 Congratulations! '$display_name [$p_type]' is born!"
   echo "   Trait:   $p_desc"
   echo "   Home:    .harnemons/$clean_species/"
@@ -635,9 +648,12 @@ cmd_recruit() {
 
   mkdir -p "$species_dir/rules" "$species_dir/skills"
 
+  sprite_write "$species_dir" "$species" "$species_type" 64 2>/dev/null || true
+
   cat << EOF > "$species_dir/partner.json"
 {
   "species": "$species",
+  "avatar": "avatar.svg",
   "name": "$species_name",
   "type": "$species_type",
   "description": "$species_desc",
@@ -681,6 +697,7 @@ EOF
 
   echo "✨ '$species_name [$species_type]' successfully joined the party!"
   echo "   Home: .harnemons/$species/"
+  sprite_show "$species_dir/sprite.json" 28 "   "
 
   local l_name="Nimbleet" l_type="Electric ⚡" l_desc="50-token skill router, ultralight zero-dependency minimal speedster"
   local l_part="$harnemons_dir/$current_lead/partner.json"
@@ -729,6 +746,7 @@ EOF
   cat << EOF > "$harnemons_dir/partner.json"
 {
   "species": "$species",
+  "avatar": "$species/avatar.svg",
   "name": "$p_name",
   "type": "$p_type",
   "description": "$p_desc",
@@ -1019,6 +1037,365 @@ cmd_version() {
   fi
 }
 
+# ── Sprite Engine ─────────────────────────────────────────────
+# Zero-dependency pixel-art renderer. Traits are derived from the species
+# name, so the same name always yields the same creature.
+
+sprite_traits() {
+  # species type -> "body eyes crest hue accent ghost" (accent "-" means auto)
+  awk -v S="$1" -v T="$2" 'BEGIN {
+    for (i = 32; i < 127; i++) ord[sprintf("%c", i)] = i
+    h = 5381
+    n = length(S)
+    for (i = 1; i <= n; i++) { c = substr(S, i, 1); v = ord[c]; if (v == "") v = 95; h = (h * 33 + v) % 2147483647 }
+    split("round tall blocky teardrop", BD, " ")
+    split("dot happy sparkle sharp", EY, " ")
+    split("none antenna horn leaf ears", CR, " ")
+    t = tolower(T); ghost = 0; acc = "-"
+    if (S == "egg" || index(t, "egg"))                      { base = 36;  acc = "#E9C46A" }
+    else if (index(t, "electric") || index(T, "\342\232\241"))   { base = 48;  acc = "#E9A400" }
+    else if (index(t, "fire") || index(T, "\360\237\224\245"))  { base = 16;  acc = "#DD5540" }
+    else if (index(t, "grass") || index(T, "\360\237\215\203")) { base = 104; acc = "#3E9C5C" }
+    else if (index(t, "water") || index(T, "\360\237\222\247")) { base = 208; acc = "#2E86C8" }
+    else if (index(t, "steel") || index(t, "iron"))         { base = 214; acc = "#7286A0" }
+    else if (index(t, "ghost") || index(T, "\360\237\221\273")) { base = 276; acc = "#8A63C7"; ghost = 1 }
+    else base = int(h / 256) % 360
+    hue = (base + int(h / 64) % 21 - 10 + 360) % 360
+    printf "%s %s %s %d %s %d\n", BD[int(h) % 4 + 1], EY[int(h / 4) % 4 + 1], CR[int(h / 16) % 5 + 1], hue, acc, ghost
+  }'
+}
+
+sprite_generate() {
+  # size hue body eyes crest ghost accent egg -> sprite.json on stdout
+  awk -v N="$1" -v HUE="$2" -v BODY="$3" -v EYES="$4" -v CREST="$5" -v GHOST="$6" -v ACCENT="$7" -v EGG="${8:-0}" '
+function mx(a, b) { return a > b ? a : b }
+function rnd(v) { return int(v + 0.5) }
+function fch(n, h, a, l,   k, m) {
+  k = n + h / 30; k = k - 12 * int(k / 12)
+  m = k - 3; if (9 - k < m) m = 9 - k
+  if (m > 1) m = 1; if (m < -1) m = -1
+  return l - a * m
+}
+function hsl(h, s, l,   a) {
+  h = h % 360; if (h < 0) h += 360
+  s = s / 100; l = l / 100
+  a = s * (l < 1 - l ? l : 1 - l)
+  return sprintf("#%02x%02x%02x", rnd(fch(0,h,a,l)*255), rnd(fch(8,h,a,l)*255), rnd(fch(4,h,a,l)*255))
+}
+function setp(x, y, c) { if (x >= 0 && x < N && y >= 0 && y < N) g[y "," x] = c }
+function getp(x, y) { return (x >= 0 && x < N && y >= 0 && y < N) ? g[y "," x] : "" }
+function ell(cx, cy, rx, ry, c,   x, y, dx, dy) {
+  for (y = 0; y < N; y++) for (x = 0; x < N; x++) {
+    dx = ((x + 0.5) / N - cx) / rx; dy = ((y + 0.5) / N - cy) / ry
+    if (dx * dx + dy * dy <= 1) setp(x, y, c)
+  }
+}
+function bx(x0, y0, x1, y1, c,   x, y) {
+  for (y = rnd(y0 * N); y < rnd(y1 * N); y++) for (x = rnd(x0 * N); x < rnd(x1 * N); x++) setp(x, y, c)
+}
+function blob(nx, ny, w, h, c,   x, y, x0, y0) {
+  x0 = rnd(nx * N - w / 2); y0 = rnd(ny * N - h / 2)
+  for (y = y0; y < y0 + h; y++) for (x = x0; x < x0 + w; x++) setp(x, y, c)
+}
+function unit(k) { return mx(1, rnd(U * k)) }
+BEGIN {
+  split("0.50 0.59 0.33 0.28 0.31 0.55 0.87", F1, " ")
+  split("0.50 0.58 0.27 0.33 0.25 0.53 0.91", F2, " ")
+  split("0.50 0.58 0.32 0.29 0.29 0.54 0.87", F3, " ")
+  split("0.50 0.63 0.31 0.25 0.30 0.60 0.88", F4, " ")
+  if (BODY == "round")       { for (i=1;i<=7;i++) B[i] = F1[i] }
+  else if (BODY == "tall")   { for (i=1;i<=7;i++) B[i] = F2[i] }
+  else if (BODY == "blocky") { for (i=1;i<=7;i++) B[i] = F3[i] }
+  else                       { for (i=1;i<=7;i++) B[i] = F4[i] }
+  CX = B[1]; CY = B[2]; RX = B[3]; RY = B[4]; TOP = B[5]; FACE = B[6]; BOT = B[7]
+  U = mx(1, rnd(N / 16))
+
+  PAL["a"] = hsl(HUE, 46, 20)
+  PAL["b"] = hsl(HUE, 68, 63)
+  PAL["c"] = hsl(HUE, 62, 50)
+  PAL["d"] = hsl(HUE, 74, 88)
+  PAL["f"] = (ACCENT != "" && ACCENT != "-") ? ACCENT : hsl(HUE + 150, 70, 55)
+  PAL["g"] = "#ffffff"
+  PAL["h"] = hsl(HUE + 330, 78, 72)
+
+  if (EGG == 1) {
+    ell(0.50, 0.63, 0.30, 0.27, "b")
+    ell(0.50, 0.43, 0.175, 0.20, "b")
+    for (y = 0; y < N; y++) for (x = 0; x < N; x++)
+      if (g[y "," x] == "b" && (y + 0.5) / N > 0.70) g[y "," x] = "c"
+    ell(0.40, 0.44, 0.085, 0.105, "d")
+    blob(0.36, 0.66, unit(2.2), unit(1.4), "c")
+    blob(0.62, 0.58, unit(1.6), unit(1.0), "c")
+    blob(0.56, 0.78, unit(1.9), unit(1.2), "c")
+  } else {
+    if (BODY == "blocky") {
+      bx(CX - RX, TOP, CX + RX, BOT, "b")
+      for (k = 0; k < U; k++) for (j = 0; j < U - k; j++) {
+        x0 = rnd((CX - RX) * N) + j; x1 = rnd((CX + RX) * N) - 1 - j
+        y0 = rnd(TOP * N) + k;       y1 = rnd(BOT * N) - 1 - k
+        delete g[y0 "," x0]; delete g[y0 "," x1]; delete g[y1 "," x0]; delete g[y1 "," x1]
+      }
+    } else {
+      ell(CX, CY, RX, RY, "b")
+      if (BODY == "teardrop") ell(CX, TOP + 0.10, RX * 0.46, 0.15, "b")
+    }
+
+    ARM = RX + 0.012
+    blob(CX - ARM, FACE + 0.14, unit(0.9), unit(2.1), "c")
+    blob(CX + ARM, FACE + 0.14, unit(0.9), unit(2.1), "c")
+
+    if (GHOST == 1) {
+      xa = rnd((CX - RX * 0.9) * N); xb = rnd((CX + RX * 0.9) * N)
+      for (x = xa; x < xb; x++) if (int((x - xa) / U) % 2 == 0) bx(x / N, BOT - 0.02, (x + 1) / N, BOT + 0.02, "c")
+    } else {
+      bx(CX - RX * 0.68, BOT - 0.03, CX - RX * 0.16, BOT + 0.035, "c")
+      bx(CX + RX * 0.16, BOT - 0.03, CX + RX * 0.68, BOT + 0.035, "c")
+    }
+
+    for (y = 0; y < N; y++) for (x = 0; x < N; x++)
+      if (g[y "," x] == "b" && (y + 0.5) / N > CY + RY * 0.42) g[y "," x] = "c"
+    ell(CX, CY + RY * 0.34, RX * 0.52, RY * 0.36, "d")
+
+    if (CREST == "antenna") {
+      len = rnd(N * 0.10)
+      for (k = 1; k <= len; k++) setp(rnd(CX * N), rnd(TOP * N) - k, "a")
+      blob(CX, TOP - (len + unit(0.9)) / N, unit(1.6), unit(1.6), "f")
+    } else if (CREST == "horn") {
+      crows = rnd(N * 0.09)
+      for (k = 0; k < crows; k++) blob(CX, TOP - (crows - k - 0.5) / N, mx(1, rnd((k + 1) * U * 0.55)), 1, "f")
+    } else if (CREST == "leaf") {
+      len = rnd(N * 0.06)
+      for (k = 1; k <= len; k++) setp(rnd(CX * N), rnd(TOP * N) - k, "a")
+      ell(CX - RX * 0.30, TOP - 0.09, 0.075, 0.042, "f")
+      ell(CX + RX * 0.34, TOP - 0.11, 0.065, 0.038, "f")
+    } else if (CREST == "ears") {
+      crows = rnd(N * 0.10)
+      for (k = 0; k < crows; k++) {
+        ew = mx(1, rnd((k + 1) * U * 0.55))
+        blob(CX - RX * 0.60, TOP + 0.015 - (crows - k - 0.5) / N, ew, 1, "c")
+        blob(CX + RX * 0.60, TOP + 0.015 - (crows - k - 0.5) / N, ew, 1, "c")
+      }
+    }
+
+    EX = RX * 0.46; EY = FACE; EW = unit(1.5); EH = unit(1.7); HI = unit(0.6)
+    L = CX - EX; R = CX + EX
+    if (EYES == "happy") {
+      blob(L - EX*0.34, EY+0.018, unit(0.8), unit(0.6), "a"); blob(L, EY-0.018, unit(0.8), unit(0.6), "a"); blob(L + EX*0.34, EY+0.018, unit(0.8), unit(0.6), "a")
+      blob(R - EX*0.34, EY+0.018, unit(0.8), unit(0.6), "a"); blob(R, EY-0.018, unit(0.8), unit(0.6), "a"); blob(R + EX*0.34, EY+0.018, unit(0.8), unit(0.6), "a")
+    } else if (EYES == "sharp") {
+      blob(L, EY+0.012, EW, unit(1.2), "a"); blob(L - EX*0.30, EY-0.030, EW, unit(0.7), "a")
+      blob(R, EY+0.012, EW, unit(1.2), "a"); blob(R + EX*0.30, EY-0.030, EW, unit(0.7), "a")
+    } else if (EYES == "sparkle") {
+      blob(L, EY, EW, rnd(EH*1.3), "a"); blob(L - EX*0.22, EY-0.028, HI, HI, "g"); blob(L + EX*0.20, EY+0.030, mx(1,HI-1), mx(1,HI-1), "g")
+      blob(R, EY, EW, rnd(EH*1.3), "a"); blob(R - EX*0.22, EY-0.028, HI, HI, "g"); blob(R + EX*0.20, EY+0.030, mx(1,HI-1), mx(1,HI-1), "g")
+    } else {
+      blob(L, EY, EW, EH, "a"); blob(L - EX*0.22, EY-0.022, HI, HI, "g")
+      blob(R, EY, EW, EH, "a"); blob(R - EX*0.22, EY-0.022, HI, HI, "g")
+    }
+
+    blob(CX - RX*0.70, EY+0.055, unit(1.4), unit(0.6), "h")
+    blob(CX + RX*0.70, EY+0.055, unit(1.4), unit(0.6), "h")
+    blob(CX, EY+0.085, unit(1.2), unit(0.5), "a")
+  }
+
+  n = 0
+  for (y = 0; y < N; y++) for (x = 0; x < N; x++)
+    if (g[y "," x] == "" && (getp(x-1,y) != "" || getp(x+1,y) != "" || getp(x,y-1) != "" || getp(x,y+1) != "")) add[n++] = y "," x
+  for (i = 0; i < n; i++) g[add[i]] = "a"
+
+  printf "{\n"
+  printf "  \"size\": %d,\n  \"hue\": %d,\n  \"body\": \"%s\",\n  \"eyes\": \"%s\",\n  \"crest\": \"%s\",\n", N, HUE, (EGG == 1 ? "egg" : BODY), (EGG == 1 ? "none" : EYES), (EGG == 1 ? "none" : CREST)
+  for (y = 0; y < N; y++) { row = ""; for (x = 0; x < N; x++) { c = g[y "," x]; if (c == "") c = "."; else used[c] = 1; row = row c } rows[y] = row }
+  printf "  \"palette\": {"
+  first = 1; split("a b c d f g h", ORDER, " ")
+  for (i = 1; i <= 7; i++) if (used[ORDER[i]]) { printf "%s \"%s\": \"%s\"", (first ? "" : ","), ORDER[i], PAL[ORDER[i]]; first = 0 }
+  printf " },\n  \"rows\": [\n"
+  for (y = 0; y < N; y++) printf "    \"%s\"%s\n", rows[y], (y < N - 1 ? "," : "")
+  printf "  ]\n}\n"
+}'
+}
+
+sprite_render() {
+  # sprite.json mode(svg|ansi) [scale-or-maxwidth] [indent]
+  awk -v MODE="${2:-ansi}" -v ARG="${3:-0}" -v PAD="${4:-}" -v MONO="${NO_COLOR:+1}" '
+function hx(s,   i) { i = index("0123456789abcdef", tolower(s)); return i - 1 }
+function ch(c, k) { return hx(substr(col[c], k, 1)) * 16 + hx(substr(col[c], k + 1, 1)) }
+function lum(c) { return (0.299 * ch(c,2) + 0.587 * ch(c,4) + 0.114 * ch(c,6)) / 255 }
+{ all = all $0 " " }
+END {
+  if (match(all, /"size"[ ]*:[ ]*[0-9]+/)) { seg = substr(all, RSTART, RLENGTH); sub(/.*:[ ]*/, "", seg); N = seg + 0 }
+  s = all
+  while (match(s, /"[a-z]"[ ]*:[ ]*"#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]"/)) {
+    seg = substr(s, RSTART, RLENGTH); col[substr(seg, 2, 1)] = substr(seg, index(seg, "#"), 7)
+    s = substr(s, RSTART + RLENGTH)
+  }
+  s = all; nr = 0
+  while (match(s, /"[a-z.]+"/)) {
+    seg = substr(s, RSTART + 1, RLENGTH - 2)
+    if (length(seg) == N) rows[nr++] = seg
+    s = substr(s, RSTART + RLENGTH)
+  }
+  if (N == 0 || nr == 0) { exit 3 }
+
+  if (MODE == "svg") {
+    sc = (ARG > 0 ? ARG : 8)
+    printf "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\" shape-rendering=\"crispEdges\">\n", N*sc, N*sc, N, N
+    for (y = 0; y < nr; y++) {
+      r = rows[y]; x = 0
+      while (x < N) {
+        c = substr(r, x + 1, 1)
+        if (c == ".") { x++; continue }
+        run = 1
+        while (x + run < N && substr(r, x + run + 1, 1) == c) run++
+        printf "  <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"1\" fill=\"%s\"/>\n", x, y, run, col[c]
+        x += run
+      }
+    }
+    printf "</svg>\n"
+    exit 0
+  }
+
+  maxw = (ARG > 0 ? ARG : 0)
+  step = 1
+  if (maxw > 0 && N > maxw) step = int((N + maxw - 1) / maxw)
+  esc = sprintf("%c", 27)
+  RAMP[1] = "\342\226\221"; RAMP[2] = "\342\226\222"; RAMP[3] = "\342\226\223"; RAMP[4] = "\342\226\210"
+  for (y = 0; y < nr; y += 2 * step) {
+    line = ""
+    for (x = 0; x < N; x += step) {
+      t = substr(rows[y], x + 1, 1)
+      b = (y + step < nr) ? substr(rows[y + step], x + 1, 1) : "."
+      if (t == "." && b == ".") { line = line " "; continue }
+      if (MONO == "1") {
+        c = (t != "." ? t : b)
+        v = lum(c); i = int((1 - v) * 3) + 1; if (i > 4) i = 4; if (i < 1) i = 1
+        line = line RAMP[i]
+        continue
+      }
+      if (t != "." && b != ".")
+        line = line esc "[38;2;" ch(t,2) ";" ch(t,4) ";" ch(t,6) "m" esc "[48;2;" ch(b,2) ";" ch(b,4) ";" ch(b,6) "m\342\226\200" esc "[0m"
+      else if (t != ".")
+        line = line esc "[38;2;" ch(t,2) ";" ch(t,4) ";" ch(t,6) "m\342\226\200" esc "[0m"
+      else
+        line = line esc "[38;2;" ch(b,2) ";" ch(b,4) ";" ch(b,6) "m\342\226\204" esc "[0m"
+    }
+    sub(/[ ]+$/, "", line)
+    if (line != "") print PAD line
+  }
+}' "$1"
+}
+
+sprite_write() {
+  # species_dir species type [size] — writes sprite.json and avatar.svg
+  local dir="$1" species="$2" ptype="${3:-}" size="${4:-64}"
+  local body eyes crest hue accent ghost egg=0
+  [ "$species" = "egg" ] && egg=1
+  read -r body eyes crest hue accent ghost <<< "$(sprite_traits "$species" "$ptype")"
+  mkdir -p "$dir"
+  sprite_generate "$size" "$hue" "$body" "$eyes" "$crest" "$ghost" "$accent" "$egg" > "$dir/sprite.json"
+  sprite_render "$dir/sprite.json" svg 8 > "$dir/avatar.svg"
+}
+
+sprite_show() {
+  # sprite.json [maxwidth] [indent] — prints the creature, silent when absent
+  [ -f "$1" ] || return 0
+  sprite_render "$1" ansi "${2:-32}" "${3:-   }" 2>/dev/null || true
+}
+
+cmd_draw() {
+  local target_dir="." species="" size=64 import_file="" force=false quiet=false egg=false
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --size|-s) size="$2"; shift 2 ;;
+      --import|-i) import_file="$2"; shift 2 ;;
+      --egg) egg=true; shift ;;
+      --force|-f) force=true; shift ;;
+      --quiet|-q) quiet=true; shift ;;
+      -*) echo "❌ Unknown option: $1"; exit 1 ;;
+      *)
+        if [ -d "$1" ]; then target_dir="$1"; else species="$1"; fi
+        shift
+        ;;
+    esac
+  done
+
+  case "$size" in
+    16|24|32|64) ;;
+    *) echo "❌ Error: --size must be one of 16, 24, 32, 64 (got '$size')."; exit 1 ;;
+  esac
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  local harnemons_dir="$target_dir/.harnemons"
+  local partner_file="$harnemons_dir/partner.json"
+
+  if [ "$egg" = true ]; then
+    species="egg"
+  elif [ -z "$species" ]; then
+    if [ -f "$partner_file" ]; then
+      species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    fi
+    if [ -z "$species" ]; then
+      echo "❌ Error: No Harnemon found at $harnemons_dir."
+      echo "   Run 'harnemon adopt' or pass a species name: harnemon draw <species>"
+      exit 1
+    fi
+  fi
+
+  local species_dir="$harnemons_dir/$species"
+  if [ ! -d "$species_dir" ]; then
+    echo "❌ Error: No species directory at .harnemons/$species/."
+    exit 1
+  fi
+
+  local p_type="Custom 🌟"
+  if [ -f "$partner_file" ]; then
+    p_type=$(grep -o '"type": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4 || echo "Custom 🌟")
+  fi
+
+  if [ -n "$import_file" ]; then
+    if [ ! -f "$import_file" ]; then
+      echo "❌ Error: Cannot read '$import_file'."
+      exit 1
+    fi
+    if ! sprite_render "$import_file" svg 8 > "$species_dir/avatar.svg" 2>/dev/null; then
+      echo "❌ Error: '$import_file' has no usable sprite (missing size, palette, or rows)."
+      rm -f "$species_dir/avatar.svg"
+      exit 1
+    fi
+    cp "$import_file" "$species_dir/sprite.json"
+    echo "📥 Imported sprite from $import_file"
+  elif [ ! -f "$species_dir/sprite.json" ] || [ "$force" = true ]; then
+    sprite_write "$species_dir" "$species" "$p_type" "$size"
+  else
+    if ! sprite_render "$species_dir/sprite.json" svg 8 > "$species_dir/avatar.svg" 2>/dev/null; then
+      echo "❌ Error: .harnemons/$species/sprite.json is unreadable. Redraw it with: harnemon draw --force"
+      exit 1
+    fi
+  fi
+
+  if [ -f "$partner_file" ] && ! grep -q '"avatar"' "$partner_file"; then
+    sprite_link_partner "$partner_file" "$species"
+  fi
+
+  if [ "$quiet" != true ]; then
+    echo ""
+    sprite_show "$species_dir/sprite.json" 32 "   "
+    echo ""
+    echo "🎨 .harnemons/$species/sprite.json  →  .harnemons/$species/avatar.svg"
+  fi
+}
+
+sprite_link_partner() {
+  # partner.json species — adds the avatar pointer without disturbing other keys
+  local file="$1" species="$2" tmp
+  tmp="$(mktemp)"
+  awk -v path="$species/avatar.svg" '
+    /"species"[ ]*:/ && !done { print; printf "  \"avatar\": \"%s\",\n", path; done = 1; next }
+    { print }
+  ' "$file" > "$tmp" && mv "$tmp" "$file"
+}
+
 cmd_status() {
   local target_dir="${1:-.}"
   target_dir="$(cd "$target_dir" && pwd)"
@@ -1046,6 +1423,7 @@ cmd_status() {
       echo "🐾 Partner: Harnemon Egg 🥚 [Incubating 🌱]"
       echo "   Trait:   $p_desc"
       echo "   Home:    .harnemons/egg/"
+      sprite_show "$target_dir/.harnemons/egg/sprite.json" 26 "   "
       
       local log_file="$target_dir/.harnemons/egg/memory/incubation-log.md"
       local obs_count=0
@@ -1088,6 +1466,7 @@ cmd_status() {
     echo "🐾 Partner: $p_name [$p_type]"
     echo "   Trait:   $p_desc"
     [ -d "$target_dir/.harnemons/$species" ] && echo "   Home:    .harnemons/$species/"
+    sprite_show "$target_dir/.harnemons/$species/sprite.json" 28 "   "
   else
     echo "🐾 Partner: Standard Harnemon"
   fi
@@ -1199,9 +1578,12 @@ cmd_feed() {
   "adopted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
+  sprite_write "$species_dir" "$p_species" "$p_type" 64 2>/dev/null || true
+
   cat << EOF > "$species_dir/partner.json"
 {
   "species": "$p_species",
+  "avatar": "avatar.svg",
   "name": "$p_name",
   "type": "$p_type",
   "description": "$p_desc",
@@ -1616,6 +1998,10 @@ case "${1:-}" in
   status)
     shift
     cmd_status "$@"
+    ;;
+  draw|art)
+    shift
+    cmd_draw "$@"
     ;;
   feed)
     shift

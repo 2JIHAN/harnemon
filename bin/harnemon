@@ -3,7 +3,34 @@
 # The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.8.0"
+VERSION="0.8.1"
+
+get_species_signature() {
+  local species="$1"
+  local name="$2"
+  local type="$3"
+
+  case "$species" in
+    nimbleet) echo "님블리트 ⚡" ;;
+    fortoise) echo "포토이즈 💧" ;;
+    monkin) echo "몽킨 🔥" ;;
+    yagni) echo "야그니 🍃" ;;
+    egg) echo "알 🥚" ;;
+    *)
+      local icon="🌟"
+      if [[ "$type" == *"⚡"* ]]; then icon="⚡"
+      elif [[ "$type" == *"💧"* ]]; then icon="💧"
+      elif [[ "$type" == *"🔥"* ]]; then icon="🔥"
+      elif [[ "$type" == *"🍃"* ]]; then icon="🍃"
+      elif [[ "$type" == *"🦀"* ]]; then icon="🦀"
+      elif [[ "$type" == *"🎨"* ]]; then icon="🎨"
+      elif [[ "$type" == *"⚙️"* ]]; then icon="⚙️"
+      fi
+      echo "$name $icon"
+      ;;
+  esac
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GLOBAL_HOME="${HOME}/.harnemon"
 
@@ -385,8 +412,20 @@ cmd_hatch() {
     rm -rf "$target_species_dir"
   fi
 
+    # Rename egg dir to species dir
   mv "$egg_dir" "$target_species_dir"
   rm -f "$target_species_dir/rules/incubation-kernel.md"
+
+  local hatch_sig
+  hatch_sig="$(get_species_signature "$clean_species" "$display_name" "$p_type")"
+  local target_fmt="$target_species_dir/rules/terminal-response-format.md"
+  if [ -f "$target_fmt" ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s/-하네몬 .*-/-하네몬 ${hatch_sig}-/g" "$target_fmt" 2>/dev/null || true
+    else
+      sed -i "s/-하네몬 .*-/-하네몬 ${hatch_sig}-/g" "$target_fmt" 2>/dev/null || true
+    fi
+  fi
 
   cat << EOF > "$harnemons_dir/partner.json"
 {
@@ -676,7 +715,16 @@ EOF
     [ -f "$rf" ] || continue
     local bname
     bname="$(basename "$rf")"
-    cp "$rf" "$rules_target/$bname"
+        cp "$rf" "$rules_target/$bname"
+    if [ "$bname" = "terminal-response-format.md" ]; then
+      local sig
+      sig="$(get_species_signature "$p_species" "$p_name" "$p_type")"
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/{{HARNEMON_SIGNATURE}}/${sig}/g" "$rules_target/$bname" 2>/dev/null || true
+      else
+        sed -i "s/{{HARNEMON_SIGNATURE}}/${sig}/g" "$rules_target/$bname" 2>/dev/null || true
+      fi
+    fi
     echo "   📄 Installed ability: .harnemons/$p_species/rules/$bname"
   done
 

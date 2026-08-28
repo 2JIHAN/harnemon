@@ -215,6 +215,18 @@ harnemon/
 
 ---
 
+## 👥 기여자 (Contributors)
+
+하네몬(Harnemon) 생태계에 기여해 주신 모든 분들께 감사드립니다:
+
+<a href="https://github.com/2JIHAN/harnemon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=2JIHAN/harnemon" alt="Harnemon Contributors" />
+</a>
+
+버그 수정, 신규 하네몬 종(Species) 제출, 문서 개선 등 모든 기여를 환영합니다! 기여 방법은 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고해 주세요.
+
+---
+
 ## 📄 라이선스
 
 Harnemon은 [MIT 라이선스](LICENSE) 하에 오픈소스로 공개되어 있습니다.

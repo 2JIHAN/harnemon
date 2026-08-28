@@ -215,6 +215,18 @@ harnemon/
 
 ---
 
+## 👥 Contributors
+
+Thanks goes to these wonderful people for contributing to Harnemon:
+
+<a href="https://github.com/2JIHAN/harnemon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=2JIHAN/harnemon" alt="Harnemon Contributors" />
+</a>
+
+Contributions of all kinds (bug fixes, new Harnemon species, documentation) are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+
+---
+
 ## 📄 License
 
 Harnemon is open-sourced under the [MIT License](LICENSE).

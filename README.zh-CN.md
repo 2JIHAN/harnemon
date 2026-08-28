@@ -108,6 +108,18 @@ harnemon audit
 
 ---
 
+## 👥 贡献者 (Contributors)
+
+感谢为 Harnemon 生态系统做出贡献的所有开发者：
+
+<a href="https://github.com/2JIHAN/harnemon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=2JIHAN/harnemon" alt="Harnemon Contributors" />
+</a>
+
+欢迎各种形式的贡献（Bug 修复、提交新物种、文档完善）！详情请参见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+---
+
 ## 📄 开源协议
 
 Harnemon 基于 [MIT 许可证](LICENSE) 开源。

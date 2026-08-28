@@ -108,6 +108,18 @@ harnemon audit
 
 ---
 
+## 👥 コントリビューター (Contributors)
+
+Harnemon に貢献してくださった素晴らしい皆様に感謝いたします:
+
+<a href="https://github.com/2JIHAN/harnemon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=2JIHAN/harnemon" alt="Harnemon Contributors" />
+</a>
+
+バグ修正、新しいハーネモン種の提出、ドキュメント改善など、あらゆる貢献を歓迎します！詳細は [CONTRIBUTING.md](CONTRIBUTING.md) をご覧ください。
+
+---
+
 ## 📄 ライセンス
 
 Harnemon は [MIT License](LICENSE) の下でオープンソースとして公開されています。

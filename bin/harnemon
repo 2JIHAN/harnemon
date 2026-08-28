@@ -898,10 +898,12 @@ cmd_setup() {
   echo "⚡ [Harnemon Global Setup] Setting up Global Belt and Agent Awareness..."
   echo "──────────────────────────────────────────────"
 
-  # 1. Symlink binary to PATH
+  # 1. Symlink binary to PATH safely
   local bin_src="$SCRIPT_DIR/bin/harnemon"
+  [ ! -f "$bin_src" ] && [ -f "$GLOBAL_HOME/bin/harnemon" ] && bin_src="$GLOBAL_HOME/bin/harnemon"
   local target_bin_dir="${HOME}/.local/bin"
   mkdir -p "$target_bin_dir"
+  rm -f "$target_bin_dir/harnemon"
   ln -sf "$bin_src" "$target_bin_dir/harnemon"
   echo "✅ Linked CLI: $target_bin_dir/harnemon"
 
@@ -1033,6 +1035,53 @@ cmd_update() {
 
   echo "──────────────────────────────────────────────"
   echo "✨ Harnemon update complete (v$VERSION)!"
+}
+
+
+cmd_version() {
+  local is_short=false
+  local do_check=true
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --short|-s) is_short=true; shift ;;
+      --no-check) do_check=false; shift ;;
+      --check|-c) do_check=true; shift ;;
+      *) shift ;;
+    esac
+  done
+
+  if [ "$is_short" = true ]; then
+    echo "$VERSION"
+    return 0
+  fi
+
+  echo "⚡ Harnemon v$VERSION"
+
+  if [ "$do_check" = true ]; then
+    local latest_tag=""
+    # 1. Check raw remote main branch version (immediate & zero-dep)
+    if command -v curl >/dev/null 2>&1; then
+      latest_tag=$(curl -s --connect-timeout 2 https://raw.githubusercontent.com/2JIHAN/harnemon/main/bin/harnemon 2>/dev/null | grep '^VERSION=' | head -n 1 | cut -d'"' -f2 || true)
+    fi
+
+    # 2. Check remote tags if raw lookup empty
+    if [ -z "$latest_tag" ] && command -v git >/dev/null 2>&1; then
+      latest_tag=$(git ls-remote --tags --refs https://github.com/2JIHAN/harnemon.git 2>/dev/null | tail -n 1 | awk -F/ '{print $NF}' || true)
+    fi
+
+    if [ -n "$latest_tag" ]; then
+      local clean_latest="${latest_tag#v}"
+      local clean_curr="${VERSION#v}"
+
+      if [ "$clean_latest" != "$clean_curr" ]; then
+        echo "🔔 Update available: v$clean_latest (Current: v$clean_curr)"
+        echo "   Run 'harnemon update' to upgrade to the latest version!"
+      else
+        echo "✅ Up to date! (Latest: v$clean_latest)"
+      fi
+    fi
+  fi
 }
 
 cmd_status() {
@@ -1665,8 +1714,9 @@ case "${1:-}" in
   dex|cases)
     cmd_dex
     ;;
-  version|-v)
-    echo "harnemon v$VERSION"
+  version|-v|check|check-update)
+    shift
+    cmd_version "$@"
     ;;
   help|-h|"")
     show_help

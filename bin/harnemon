@@ -657,11 +657,16 @@ cmd_recruit() {
 
   echo "🎉 [Harnemon Party] Recruiting '$species_name [$species_type]' into project party..."
 
-  local base_source="$SCRIPT_DIR"
-  if [ -d "$GLOBAL_HOME/catalog/$species" ]; then
-    base_source="$GLOBAL_HOME/catalog/$species"
-  elif [ -d "$GLOBAL_HOME" ]; then
-    base_source="$GLOBAL_HOME"
+  local species_source="$SCRIPT_DIR/species/$species"
+  if [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/species/$species" ]; then
+    species_source="$GLOBAL_HOME/species/$species"
+  elif [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/catalog/$species" ]; then
+    species_source="$GLOBAL_HOME/catalog/$species"
+  fi
+
+  if [ ! -d "$species_source" ]; then
+    echo "❌ Error: Unknown species '$species'. Run 'harnemon dex' to see available species."
+    exit 1
   fi
 
   mkdir -p "$species_dir/rules" "$species_dir/skills"
@@ -676,8 +681,7 @@ cmd_recruit() {
 }
 EOF
 
-  local rules_src="$base_source/rules"
-  [ ! -d "$rules_src" ] && rules_src="$SCRIPT_DIR/rules"
+  local rules_src="$species_source/rules"
   for rf in "$rules_src/"*.md; do
     [ -f "$rf" ] || continue
     local bname
@@ -694,8 +698,7 @@ EOF
     fi
   done
 
-  local skills_src="$base_source/skills"
-  [ ! -d "$skills_src" ] && skills_src="$SCRIPT_DIR/skills"
+  local skills_src="$species_source/skills"
   for sd in "$skills_src/"*; do
     local sname
     sname="$(basename "$sd")"
@@ -1044,13 +1047,15 @@ cmd_feed() {
   echo "   🐾 Adopted Instance Mode: .harnemons/$p_species/ (100% Isolated & Clean)"
   echo "──────────────────────────────────────────────"
 
-  local base_source="$SCRIPT_DIR"
-  if [ -d "$GLOBAL_HOME" ]; then
-    base_source="$GLOBAL_HOME"
+  local species_source="$SCRIPT_DIR/species/$p_species"
+  if [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/species/$p_species" ]; then
+    species_source="$GLOBAL_HOME/species/$p_species"
+  elif [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/catalog/$p_species" ]; then
+    species_source="$GLOBAL_HOME/catalog/$p_species"
   fi
 
-  if [ -d "$GLOBAL_HOME/catalog/$p_species" ]; then
-    base_source="$GLOBAL_HOME/catalog/$p_species"
+  if [ ! -d "$species_source" ]; then
+    species_source="$SCRIPT_DIR/species/nimbleet"
   fi
 
   local harnemons_dir="$target_dir/.harnemons"
@@ -1080,8 +1085,7 @@ EOF
   echo "📜 Bestowing Abilities (Rules)..."
   local rules_target="$species_dir/rules"
   mkdir -p "$rules_target"
-  local rules_src="$base_source/rules"
-  [ ! -d "$rules_src" ] && rules_src="$SCRIPT_DIR/rules"
+  local rules_src="$species_source/rules"
   for rf in "$rules_src/"*.md; do
     [ -f "$rf" ] || continue
     local bname
@@ -1102,8 +1106,7 @@ EOF
   echo "🧰 Imprinting Moves (Skills)..."
   local skills_target="$species_dir/skills"
   mkdir -p "$skills_target"
-  local skills_src="$base_source/skills"
-  [ ! -d "$skills_src" ] && skills_src="$SCRIPT_DIR/skills"
+  local skills_src="$species_source/skills"
   for sd in "$skills_src/"*; do
     local sname
     sname="$(basename "$sd")"

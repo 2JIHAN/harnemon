@@ -3,7 +3,7 @@
 # The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.9.2"
+VERSION="0.9.3"
 
 get_species_signature() {
   local species="$1"
@@ -44,6 +44,7 @@ Usage:
 
 Commands:
   setup, global            Set up global belt & register Harnemon awareness to ~/.agents/AGENTS.md
+  update, upgrade [path]   Update Harnemon global belt, refresh agent awareness, & sync project rules
   adopt [species] [path]   Adopt a Harnemon starter or add an additional specialist to your party
   party [path]             View your project's Harnemon Party lineup (up to 6 members)
   switch <species> [path]  Switch the Active Lead partner in your project party
@@ -950,6 +951,90 @@ This system is equipped with **Harnemon** (\`~/.harnemon\`), the zero-dependency
   echo "   All AI agents across all repositories are now Harnemon-aware."
 }
 
+
+cmd_update() {
+  local target_dir="${1:-.}"
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  echo "⚡ [Harnemon Update] Updating Harnemon Global Belt and Project Partner..."
+  echo "──────────────────────────────────────────────"
+
+  # 1. Update Global Belt from git remote if applicable
+  local repo_dir="$SCRIPT_DIR"
+  if [ -d "$GLOBAL_HOME/.git" ]; then
+    repo_dir="$GLOBAL_HOME"
+  fi
+
+  if [ -d "$repo_dir/.git" ]; then
+    echo "📦 Checking latest changes in $repo_dir..."
+    git -C "$repo_dir" pull --ff-only origin main 2>/dev/null || echo "ℹ️ Git pull skipped."
+  fi
+
+  # 2. Refresh Global Agent Awareness & PATH via cmd_setup
+  cmd_setup >/dev/null 2>&1 || true
+  echo "✅ Refreshed Global Agent Awareness in: ${HOME}/.agents/AGENTS.md"
+
+  # 3. Update current project instance if present
+  local harnemons_dir="$target_dir/.harnemons"
+  if [ -d "$harnemons_dir" ]; then
+    echo "🔄 Syncing project partner in $target_dir..."
+    local party_file="$harnemons_dir/party.json"
+    local partner_file="$harnemons_dir/partner.json"
+    local active_species="nimbleet"
+
+    if [ -f "$party_file" ]; then
+      active_species=$(grep -o '"lead": "[^"]*' "$party_file" | head -n 1 | cut -d'"' -f4)
+    elif [ -f "$partner_file" ]; then
+      active_species=$(grep -o '"species": "[^"]*' "$partner_file" | head -n 1 | cut -d'"' -f4)
+    fi
+
+    for sdir in "$harnemons_dir/"*; do
+      [ -d "$sdir" ] || continue
+      local sname
+      sname="$(basename "$sdir")"
+      local species_source="$SCRIPT_DIR/species/$sname"
+      [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/species/$sname" ] && species_source="$GLOBAL_HOME/species/$sname"
+      [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/catalog/$sname" ] && species_source="$GLOBAL_HOME/catalog/$sname"
+
+      if [ -d "$species_source/rules" ]; then
+        for rf in "$species_source/rules/"*.md; do
+          [ -f "$rf" ] || continue
+          local bname
+          bname="$(basename "$rf")"
+          cp "$rf" "$sdir/rules/$bname"
+          if [ "$bname" = "terminal-response-format.md" ]; then
+            local s_part="$sdir/partner.json"
+            local sn="$sname" st=""
+            [ -f "$s_part" ] && sn=$(grep -o '"name": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "$sname")
+            [ -f "$s_part" ] && st=$(grep -o '"type": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+            local sig
+            sig="$(get_species_signature "$sname" "$sn" "$st")"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+              sed -i '' "s/{{HARNEMON_SIGNATURE}}/${sig}/g" "$sdir/rules/$bname" 2>/dev/null || true
+            else
+              sed -i "s/{{HARNEMON_SIGNATURE}}/${sig}/g" "$sdir/rules/$bname" 2>/dev/null || true
+            fi
+          fi
+        done
+      fi
+    done
+
+    local p_part="$harnemons_dir/$active_species/partner.json"
+    [ ! -f "$p_part" ] && p_part="$partner_file"
+    local pn="Nimbleet" pt="Electric ⚡" pd="50-token skill router"
+    if [ -f "$p_part" ]; then
+      pn=$(grep -o '"name": "[^"]*' "$p_part" | head -n 1 | cut -d'"' -f4 || echo "$active_species")
+      pt=$(grep -o '"type": "[^"]*' "$p_part" | head -n 1 | cut -d'"' -f4 || echo "")
+      pd=$(grep -o '"description": "[^"]*' "$p_part" | head -n 1 | cut -d'"' -f4 || echo "")
+    fi
+    generate_agents_md "$target_dir" "$active_species" "$pn" "$pt" "$pd"
+    echo "✅ Synchronized project rules and wiring (.agents/AGENTS.md)"
+  fi
+
+  echo "──────────────────────────────────────────────"
+  echo "✨ Harnemon update complete (v$VERSION)!"
+}
+
 cmd_status() {
   local target_dir="${1:-.}"
   target_dir="$(cd "$target_dir" && pwd)"
@@ -1520,6 +1605,10 @@ case "${1:-}" in
   setup|global|init-global)
     shift
     cmd_setup "$@"
+    ;;
+  update|upgrade)
+    shift
+    cmd_update "$@"
     ;;
   adopt|recruit|add)
     shift

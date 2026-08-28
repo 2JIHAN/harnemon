@@ -30,6 +30,7 @@ jobs:
           ./bin/harnemon help
           ./bin/harnemon dex
           ./bin/harnemon version
+          ./bin/harnemon update
 
       - name: Test Incubator Lifecycle (Egg -> Hatch -> Audit)
         run: |

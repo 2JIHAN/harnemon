@@ -18,8 +18,8 @@
 ### 📜 Abilities (Rules)
 - **`incubation-kernel.md`** — Active feedback listener; detects repeated user corrections
 - **`harness-evolution.md`** — Hermes self-evolution engine; codifies rules autonomously
-- **`skill-routing.md`** — Lightweight skill dispatcher hub
-- **`terminal-response-format.md`** — Visual layout standards and `-하네몬 알 🥚-` turn signature
+
+The egg ships no other always-on rules. Formatting, language, and workflow conventions are learned from the developer, then promoted here.
 
 ### 🧰 Learned Moves (Skills)
 - **`harness-evolution/`** — Autonomous skill synthesis playbook

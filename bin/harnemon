@@ -282,6 +282,7 @@ cmd_incubate() {
   mkdir -p "$species_dir"
 
   cp -R "$egg_template/"* "$species_dir/"
+  memory_scaffold "$species_dir"
 
   sprite_write "$species_dir" "egg" "Egg 🥚" 64 2>/dev/null || true
 
@@ -1465,7 +1466,7 @@ sprite_link_partner() {
 # layer, written once at hatch and tended afterwards by harnemon rest.
 
 MEMORY_HATCH_MIN=60
-MEMORY_BASE_RULES=" incubation-kernel harness-evolution skill-routing terminal-response-format "
+MEMORY_BASE_RULES=" incubation-kernel harness-evolution "
 MEMORY_BASE_SKILLS=" harness-evolution "
 
 memory_species_dir() {
@@ -1489,14 +1490,30 @@ memory_episode_file() {
   echo "$file"
 }
 
+memory_scaffold() {
+  # species_dir -> ensures the episode ledger exists, egg or mature alike
+  local dir="$1/memory" src
+  mkdir -p "$dir/episodes"
+  if [ ! -f "$dir/README.md" ]; then
+    for src in "$SCRIPT_DIR/templates/egg/memory/README.md" "$GLOBAL_HOME/templates/egg/memory/README.md"; do
+      [ -f "$src" ] && { cp "$src" "$dir/README.md"; break; }
+    done
+  fi
+}
+
+memory_incubating() {
+  # species_dir -> 0 when this Harnemon is still an egg
+  [ "$(basename "$1")" = "egg" ]
+}
+
 memory_counts() {
   # species_dir -> "entries corrections rules skills"
   local dir="$1" entries=0 corrections=0 rules=0 skills=0 f b
   if [ -d "$dir/memory/episodes" ]; then
     for f in "$dir/memory/episodes/"*.md; do
       [ -f "$f" ] || continue
-      entries=$((entries + $(grep -c '^- \[' "$f" 2>/dev/null || echo 0)))
-      corrections=$((corrections + $(grep -c '^- \[correction\]' "$f" 2>/dev/null || echo 0)))
+      entries=$((entries + $({ grep -c '^- \[' "$f" || true; } 2>/dev/null)))
+      corrections=$((corrections + $({ grep -c '^- \[correction\]' "$f" || true; } 2>/dev/null)))
     done
   fi
   for f in "$dir/rules/"*.md; do
@@ -1553,7 +1570,7 @@ memory_distill() {
     }
     END {
       printf "# Memory · %s\n\n", NAME
-      printf "Distilled at hatch on %s from %d episode entries. Every entry points back\n", TODAY, n + merged
+      printf "Distilled on %s from %d episode entries. Every entry points back\n", TODAY, n + merged
       printf "to the episode it came from, so a claim can always be traced to the moment it\n"
       printf "was learned. Tend this file with harnemon rest, and keep it under 100 lines.\n"
       split("correction convention decision", ORDER, " ")
@@ -1620,10 +1637,17 @@ cmd_note() {
   read -r entries corrections rules skills <<< "$(memory_counts "$sdir")"
   readiness=$(memory_readiness "$entries" "$rules" "$skills")
 
-  echo "🌱 [Harnemon Incubating] Recorded a $ntype."
-  echo "   ${file#$target_dir/}"
-  echo "   Evidence: $entries entries ($corrections corrections) · Rules: $rules · Moves: $skills"
-  echo "   Hatch readiness: ${readiness}%$([ "$readiness" -lt "$MEMORY_HATCH_MIN" ] && echo " (need ${MEMORY_HATCH_MIN}% to hatch)" || echo " · ready to hatch")"
+  if memory_incubating "$sdir"; then
+    echo "🌱 [Harnemon Incubating] Recorded a $ntype."
+    echo "   ${file#$target_dir/}"
+    echo "   Evidence: $entries entries ($corrections corrections) · Rules: $rules · Moves: $skills"
+    echo "   Hatch readiness: ${readiness}%$([ "$readiness" -lt "$MEMORY_HATCH_MIN" ] && echo " (need ${MEMORY_HATCH_MIN}% to hatch)" || echo " · ready to hatch")"
+  else
+    echo "🧠 [Harnemon Memory] Recorded a $ntype."
+    echo "   ${file#$target_dir/}"
+    echo "   Evidence: $entries entries ($corrections corrections)"
+    echo "   Distil it into MEMORY.md when it settles: harnemon rest --apply"
+  fi
 }
 
 memory_cite() {
@@ -1671,9 +1695,15 @@ cmd_rest() {
 
   local mem="$sdir/memory/MEMORY.md"
   if [ ! -f "$mem" ]; then
-    echo "🥚 Nothing to tend yet: MEMORY.md is written when the egg hatches."
-    echo "   Record what it learns in the meantime: harnemon note \"<text>\""
-    return 0
+    local entries
+    read -r entries _ _ _ <<< "$(memory_counts "$sdir")"
+    if memory_incubating "$sdir" || [ "$entries" -eq 0 ]; then
+      echo "🥚 Nothing to tend yet: MEMORY.md is distilled at hatch."
+      echo "   Record what it learns in the meantime: harnemon note \"<text>\""
+      return 0
+    fi
+    memory_distill "$sdir" "$(basename "$sdir")" >/dev/null
+    echo "🧠 Distilled $entries episode entries into memory/MEMORY.md."
   fi
 
   local work
@@ -1892,6 +1922,19 @@ cmd_status() {
     echo "🧰 Moves: None"
   fi
 
+  local mem_dir="$target_dir/.harnemons/$species/memory"
+  if [ -d "$mem_dir" ]; then
+    local m_entries m_corrections
+    read -r m_entries m_corrections _ _ <<< "$(memory_counts "$target_dir/.harnemons/$species")"
+    echo "🧠 Episode Ledger:"
+    echo "   • Evidence: ${m_entries} entries (${m_corrections} corrections)"
+    if [ -f "$mem_dir/MEMORY.md" ]; then
+      echo "   • Distilled: memory/MEMORY.md ($({ grep -c '^- ' "$mem_dir/MEMORY.md" || true; } 2>/dev/null) memories)"
+    else
+      echo "   • Distilled: not yet · harnemon rest --apply"
+    fi
+  fi
+
   local hooks_dir="$target_dir/.git/hooks"
   if [ -d "$hooks_dir" ]; then
     echo "🪝 Equipped Held Items (Hooks):"
@@ -2015,6 +2058,10 @@ EOF
     cp "$skills_src/INDEX.md" "$skills_target/INDEX.md"
     echo "   📋 Indexed catalog: .harnemons/$p_species/skills/INDEX.md"
   fi
+
+  memory_scaffold "$species_dir"
+  echo "🧠 Opening Episode Ledger..."
+  echo "   📓 Ready: .harnemons/$p_species/memory/episodes/ (harnemon note \"<text>\")"
 
   if [ -d "$target_dir/.git" ]; then
     echo "🪝 Equipping Held Items (Git Hooks)..."

@@ -9,6 +9,7 @@ description: Continuous self-evolution directive for AI agents. Governs ownershi
 
 ## 1. 패턴 수확 및 하네스 승격 (Pattern Harvesting)
 
+- **관찰 즉시 기록 (Record on Sight)** — 교정, 컨벤션, 결정 사항을 관찰하면 그 자리에서 `harnemon note "<내용>" --type correction|convention|decision`을 실행하여 오늘자 에피소드 로그(`memory/episodes/`)에 남긴다. 에피소드 로그는 알과 성체를 가리지 않고 항상 유지하며, 추가만 하고 과거 항목은 고쳐 쓰지 않는다.
 - **2회 반복의 법칙** — 사용자가 동일한 스타일, 아키텍처 원칙, 또는 주의사항을 2회 이상 반복해서 지적하거나 교정할 경우, 이를 하네스 개선 후보로 포착한다.
 - **승격 분기 기준**:
   - **상시 인지 제약 (50줄 미만)** ➔ `rules/<name>.md`로 신설 (예: 팀 공통 코딩 스타일, 언어 규약)

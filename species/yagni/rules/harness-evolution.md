@@ -27,6 +27,6 @@ description: Continuous self-evolution directive for AI agents. Governs ownershi
 
 ## 3. 자가 진단 및 성숙도 관리 (Self-Auditing)
 
-- **주기적 감사** — 하네스 구조를 변경하거나 새 기능을 추가한 직후에는 반드시 `mhm audit`을 실행하여 토큰 크기, 스킬 명세, 훅 권한의 무결성을 검증한다.
+- **주기적 감사** — 하네스 구조를 변경하거나 새 기능을 추가한 직후에는 반드시 `harnemon audit`을 실행하여 토큰 크기, 스킬 명세, 훅 권한의 무결성을 검증한다.
 - **성숙도 발전** — 하네스가 Level 1(모놀리식)이나 Level 2(단순 분리)에 머물지 않고, Level 3(스킬 라우터 및 물리 하드 게이트)과 Level 4(자가 진화형) 수준을 유지하도록 아키텍처를 점진적으로 고도화한다.
 - **문서 다국어화(i18n) 상시 기본**: 공개 문서 및 README 작성·수정 시 항상 4개 국어(EN, KO, JA, ZH) 세트를 원자적으로 동기화함.

@@ -61,4 +61,4 @@ Always-on dispatch rules. You MUST load and strictly adhere to the designated sk
 - **Directives**:
   - Enforce the 3 Pillars decision matrix (Rule vs Skill vs Hook).
   - Keep rules under 100 lines; extract detailed guides to skills.
-  - Run `mhm audit` to verify integrity after modifications.
+  - Run `harnemon audit` to verify integrity after modifications.

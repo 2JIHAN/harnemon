@@ -320,34 +320,10 @@ EOF
   rm -rf "$target_dir/.claude/skills"
   ln -sf "../.harnemons/egg/skills" "$target_dir/.claude/skills"
 
-  local agents_md="$target_dir/.agents/AGENTS.md"
-  cat << EOF > "$agents_md"
-# Harnemon Operating Rules (AGENTS.md)
-
-**Partner**: Harnemon Egg 🥚 [Incubating 🌱]
-**Species**: egg (Incubating)
-**Description**: A blank canvas absorbing developer feedback and conventions to hatch a custom species
-
-This project is incubating a raw Harnemon Egg with the 3 Pillars (Rule, Skill, Hook).
-
-## Active Abilities (Rules)
-EOF
-  for rf in "$species_dir/rules/"*.md; do
-    [ -f "$rf" ] || continue
-    local bname
-    bname="$(basename "$rf")"
-    echo "@../.harnemons/egg/rules/$bname" >> "$agents_md"
-    echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
-  done
-
-  cat << EOF >> "$agents_md"
-
-## Learned Moves (Skills Catalog)
-@../.harnemons/egg/skills/INDEX.md
-EOF
-
-  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
-  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+  generate_agents_md "$target_dir" "egg" "Harnemon Egg 🥚" "Incubating 🌱" \
+    "A blank canvas absorbing developer feedback and conventions to hatch a custom species" \
+    "This project is incubating a raw Harnemon Egg with the 3 Pillars (Rule, Skill, Hook)." \
+    "Partner"
 
   sprite_write "$species_dir" "egg" "Egg 🥚" 64 2>/dev/null || true
 
@@ -463,33 +439,7 @@ EOF
   rm -rf "$target_dir/.claude/skills"
   ln -sf "../.harnemons/$clean_species/skills" "$target_dir/.claude/skills"
 
-  local agents_md="$target_dir/.agents/AGENTS.md"
-  cat << EOF > "$agents_md"
-# Harnemon Operating Rules (AGENTS.md)
-
-**Partner**: $display_name [$p_type]
-**Species**: $clean_species
-**Description**: $p_desc
-
-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
-
-## Active Abilities (Rules)
-EOF
-  for rf in "$target_species_dir/rules/"*.md; do
-    [ -f "$rf" ] || continue
-    local bname
-    bname="$(basename "$rf")"
-    echo "@../.harnemons/$clean_species/rules/$bname" >> "$agents_md"
-  done
-
-  cat << EOF >> "$agents_md"
-
-## Learned Moves (Skills Catalog)
-@../.harnemons/$clean_species/skills/INDEX.md
-EOF
-
-  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
-  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+  generate_agents_md "$target_dir" "$clean_species" "$display_name" "$p_type" "$p_desc" "" "Partner"
 
   echo ""
   echo "✨🐣 CRACK! The Harnemon Egg has hatched! 🐣✨"
@@ -847,67 +797,142 @@ cmd_dismiss() {
 }
 
 
+# ── Managed markdown blocks ───────────────────────────────────────────────────
+# Every wiring Harnemon writes into a markdown file is fenced by HTML comment
+# markers. A regeneration replaces only the block carrying its own marker, so
+# hand-written prose in the same file survives untouched, and the version stamp
+# on the opening marker records which release produced the block.
+
+md_block_write() {
+  # file, block id; body arrives on stdin
+  local file="$1" id="$2" body begin end tmp
+  body="$(cat)"
+  begin="<!-- harnemon:$id:begin v$VERSION -->"
+  end="<!-- harnemon:$id:end -->"
+  mkdir -p "$(dirname "$file")"
+  [ -f "$file" ] || : > "$file"
+  # 본문은 파일로 건넨다. BSD awk는 -v 변수 안의 줄바꿈을 받지 못한다
+  local bodyfile
+  bodyfile="$(mktemp)"
+  printf '%s\n' "$body" > "$bodyfile"
+  tmp="$(mktemp)"
+  awk -v id="$id" -v begin="$begin" -v end="$end" -v bodyfile="$bodyfile" '
+    function emit(   line) {
+      print begin
+      while ((getline line < bodyfile) > 0) print line
+      close(bodyfile)
+      print end
+    }
+    index($0, "<!-- harnemon:" id ":begin") == 1 { found = 1; inblock = 1; emit(); next }
+    inblock && index($0, "<!-- harnemon:" id ":end") == 1 { inblock = 0; next }
+    inblock { next }
+    { print; last = $0 }
+    END { if (!found) { if (NR > 0 && last != "") print ""; emit() } }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  rm -f "$bodyfile"
+}
+
+md_block_drop() {
+  # file, block id — retires a block that no longer applies
+  local file="$1" id="$2" tmp
+  [ -f "$file" ] || return 0
+  grep -q "<!-- harnemon:$id:begin" "$file" || return 0
+  tmp="$(mktemp)"
+  awk -v id="$id" '
+    index($0, "<!-- harnemon:" id ":begin") == 1 { inblock = 1; next }
+    inblock && index($0, "<!-- harnemon:" id ":end") == 1 { inblock = 0; next }
+    inblock { next }
+    { print }
+  ' "$file" | awk 'NF || prev { print } { prev = NF }' > "$tmp"
+  mv "$tmp" "$file"
+}
+
+
 generate_agents_md() {
   local target_dir="$1"
   local lead_species="$2"
   local p_name="$3"
   local p_type="$4"
   local p_desc="$5"
+  local intro="${6:-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).}"
+  local label="${7:-Active Lead}"
 
   local harnemons_dir="$target_dir/.harnemons"
+  local species_dir="$harnemons_dir/$lead_species"
   local agents_md="$target_dir/.agents/AGENTS.md"
-  mkdir -p "$target_dir/.agents"
+  mkdir -p "$target_dir/.agents" "$target_dir/.claude" "$target_dir/.gemini"
 
-  cat << EOF > "$agents_md"
-# Harnemon Operating Rules (AGENTS.md)
+  if [ ! -f "$agents_md" ]; then
+    printf '# Harnemon Operating Rules (AGENTS.md)\n' > "$agents_md"
+  fi
 
-**Active Lead**: $p_name [$p_type]
+  md_block_write "$agents_md" "partner" << EOF
+**$label**: $p_name [$p_type]
 **Species**: $lead_species
 **Description**: $p_desc
 
-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
-
-## Active Abilities (Rules)
+$intro
 EOF
 
-  local species_dir="$harnemons_dir/$lead_species"
+  local rules_body="## Active Abilities (Rules)" rule_count=0 rf bname
   for rf in "$species_dir/rules/"*.md; do
     [ -f "$rf" ] || continue
-    local bname
     bname="$(basename "$rf")"
-    echo "@../.harnemons/$lead_species/rules/$bname" >> "$agents_md"
+    rules_body="$rules_body
+@../.harnemons/$lead_species/rules/$bname"
+    rule_count=$((rule_count + 1))
   done
+  printf '%s\n' "$rules_body" | md_block_write "$agents_md" "rules"
 
-  local has_other=0
+  local party_body="## Party Roster & Specialists" party_count=0 sdir sname s_part sn st sd
   for sdir in "$harnemons_dir/"*; do
     [ -d "$sdir" ] || continue
-    local sname
     sname="$(basename "$sdir")"
-    if [ "$sname" != "$lead_species" ] && [ "$sname" != "egg" ]; then
-      if [ "$has_other" -eq 0 ]; then
-        echo "" >> "$agents_md"
-        echo "## Party Roster & Specialists" >> "$agents_md"
-        has_other=1
-      fi
-      local s_part="$sdir/partner.json"
-      local sn="$sname" st="" sd=""
-      if [ -f "$s_part" ]; then
-        sn=$(grep -o '"name": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "$sname")
-        st=$(grep -o '"type": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
-        sd=$(grep -o '"description": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
-      fi
-      echo "- **$sn [$st]** — \`.harnemons/$sname/\` ($sd)" >> "$agents_md"
+    [ "$sname" = "$lead_species" ] && continue
+    [ "$sname" = "egg" ] && continue
+    s_part="$sdir/partner.json"
+    sn="$sname"; st=""; sd=""
+    if [ -f "$s_part" ]; then
+      sn=$(grep -o '"name": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "$sname")
+      st=$(grep -o '"type": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
+      sd=$(grep -o '"description": "[^"]*' "$s_part" | head -n 1 | cut -d'"' -f4 || echo "")
     fi
+    party_body="$party_body
+- **$sn [$st]** — \`.harnemons/$sname/\` ($sd)"
+    party_count=$((party_count + 1))
   done
+  if [ "$party_count" -gt 0 ]; then
+    printf '%s\n' "$party_body" | md_block_write "$agents_md" "party"
+  else
+    md_block_drop "$agents_md" "party"
+  fi
 
-  cat << EOF >> "$agents_md"
+  printf '## Learned Moves (Skills Catalog)\n@../.harnemons/%s/skills/INDEX.md\n' "$lead_species" \
+    | md_block_write "$agents_md" "skills"
 
-## Learned Moves (Skills Catalog)
-@../.harnemons/$lead_species/skills/INDEX.md
-EOF
+  local hooks_body="## Enforced Gates (Hooks)" hook_count=0 hk hname
+  for hk in "$species_dir/hooks/"*; do
+    [ -d "$hk" ] || continue
+    hname="$(basename "$hk")"
+    hooks_body="$hooks_body
+- \`$hname\` — \`.harnemons/$lead_species/hooks/$hname/\`"
+    hook_count=$((hook_count + 1))
+  done
+  if [ "$hook_count" -gt 0 ]; then
+    printf '%s\n' "$hooks_body" | md_block_write "$agents_md" "hooks"
+  else
+    md_block_drop "$agents_md" "hooks"
+  fi
 
   echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
   echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+
+  local summary="   🔌 Wired $rule_count rule(s) and the skills catalog into .agents/AGENTS.md"
+  if [ "$hook_count" -gt 0 ]; then
+    summary="$summary ($hook_count hook gate(s) listed)"
+  fi
+  echo "$summary"
 }
 
 
@@ -929,26 +954,10 @@ cmd_setup() {
   mkdir -p "$global_agents_dir"
   local global_agents_md="$global_agents_dir/AGENTS.md"
 
-  local harness_rule
-  harness_rule="$(cat << 'AWARENESS'
-<!-- harnemon:begin -->
-## ⚡ Harnemon Companion (~/.harnemon)
-Autonomous zero-dependency harness companion for AI coding agents.
-
-- **Adopted Workspace**: If `.harnemons/` exists, follow the active partner declared in `.agents/AGENTS.md`.
-- **Unadopted Workspace**: Run `harnemon adopt` or `harnemon incubate` to awaken a companion.
-- **Reference**: Full details and species catalog at `~/.harnemon/README.md`.
-<!-- harnemon:end -->
-AWARENESS
-)"
-
-  if [ ! -f "$global_agents_md" ]; then
-    printf '%s\n' "$harness_rule" > "$global_agents_md"
-    echo "✅ Inscribed Global Harnemon Awareness to: $global_agents_md"
-  else
+  # 이름공간 없는 옛 표식과 표식이 없던 시절의 블록은 한 번만 걷어낸다
+  if [ -f "$global_agents_md" ] && ! grep -q "<!-- harnemon:awareness:begin" "$global_agents_md"; then
     local tmp
     tmp="$(mktemp)"
-    # 이전 판이 남긴 블록과 표식 사이의 블록을 모두 걷어낸 뒤 현재 판을 다시 쓴다
     awk '
       /<!-- harnemon:begin -->/ { skip = 1; next }
       /<!-- harnemon:end -->/   { skip = 0; next }
@@ -959,15 +968,18 @@ AWARENESS
       /^#+ *#? *Global Agent Guidelines \(~\/\.agents\/AGENTS\.md\)$/ { next }
       { print }
     ' "$global_agents_md" | awk 'NF || prev { print } { prev = NF }' > "$tmp"
-    if [ -s "$tmp" ]; then
-      printf '%s\n\n' "$(cat "$tmp")" > "$global_agents_md"
-    else
-      : > "$global_agents_md"
-    fi
-    printf '%s\n' "$harness_rule" >> "$global_agents_md"
-    rm -f "$tmp"
-    echo "✅ Refreshed Global Harnemon Awareness in: $global_agents_md"
+    mv "$tmp" "$global_agents_md"
   fi
+
+  md_block_write "$global_agents_md" "awareness" << 'AWARENESS'
+## ⚡ Harnemon Companion (~/.harnemon)
+Autonomous zero-dependency harness companion for AI coding agents.
+
+- **Adopted Workspace**: If `.harnemons/` exists, follow the active partner declared in `.agents/AGENTS.md`.
+- **Unadopted Workspace**: Run `harnemon adopt` or `harnemon incubate` to awaken a companion.
+- **Reference**: Full details and species catalog at `~/.harnemon/README.md`.
+AWARENESS
+  echo "✅ Refreshed Global Harnemon Awareness in: $global_agents_md"
 
   # 3. Claude Code global link if ~/.claude exists
   if [ -d "${HOME}/.claude" ]; then
@@ -2111,35 +2123,7 @@ EOF
   ln -sf "../.harnemons/$p_species/skills" "$target_dir/.claude/skills"
   echo "   🔌 Wired: .claude/skills -> ../.harnemons/$p_species/skills (Claude Code Native Scan)"
 
-  local agents_md="$target_dir/.agents/AGENTS.md"
-  cat << EOF > "$agents_md"
-# Harnemon Operating Rules (AGENTS.md)
-
-**Partner**: $p_name [$p_type]
-**Species**: $p_species
-**Description**: $p_desc
-
-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).
-
-## Active Abilities (Rules)
-EOF
-  for rf in "$rules_target/"*.md; do
-    [ -f "$rf" ] || continue
-    local bname
-    bname="$(basename "$rf")"
-    echo "@../.harnemons/$p_species/rules/$bname" >> "$agents_md"
-    echo "   🔌 Wired '$bname' into .agents/AGENTS.md"
-  done
-
-  cat << EOF >> "$agents_md"
-
-## Learned Moves (Skills Catalog)
-@../.harnemons/$p_species/skills/INDEX.md
-EOF
-  echo "   📋 Wired 'skills/INDEX.md' into .agents/AGENTS.md"
-
-  echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
-  echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
+  generate_agents_md "$target_dir" "$p_species" "$p_name" "$p_type" "$p_desc" "" "Partner"
   echo "   🔌 Wired: .claude/CLAUDE.md & .gemini/GEMINI.md -> .agents/AGENTS.md"
 
   echo "──────────────────────────────────────────────"

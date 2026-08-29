@@ -33,6 +33,7 @@ Commands:
   party [path]             View your project's Harnemon Party lineup (up to 6 members)
   switch <species> [path]  Switch the Active Lead partner in your project party
   dismiss <species> [path] Dismiss a member from your project party
+  release [path] [-y]      Release the partner: delete .harnemons/ and unwire this project
   incubate, egg [path]     Awaken a blank Harnemon Egg 🥚 to incubate and evolve via 2-correction feedback
   hatch <name> [options]   Hatch the incubated egg into a named mature Harnemon species (e.g. Supabird ⚡)
   register [path]          Register your mature Harnemon species to global Harnedex (~/.harnemon/catalog/)
@@ -66,6 +67,7 @@ Examples:
   harnemon draw --force                # Redraw the partner sprite from scratch
   harnemon audit                       # Health-check your partner
   harnemon dex                         # Browse Harnedex
+  harnemon release                     # Release the partner and unwire the project
 EOF
 }
 
@@ -935,6 +937,143 @@ EOF
   echo "$summary"
 }
 
+
+cmd_release() {
+  local target_dir="." force=false
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -y|--yes|--force) force=true; shift ;;
+      -*) echo "❌ Unknown option: $1" >&2; exit 1 ;;
+      *) target_dir="$1"; shift ;;
+    esac
+  done
+
+  [ -d "$target_dir" ] || { echo "❌ Error: '$target_dir' is not a directory."; exit 1; }
+  target_dir="$(cd "$target_dir" && pwd)"
+
+  local harnemons_dir="$target_dir/.harnemons"
+  if [ ! -d "$harnemons_dir" ]; then
+    echo "ℹ️  No Harnemon lives in $target_dir. Nothing to release."
+    return 0
+  fi
+
+  local species="egg" p_name="Harnemon"
+  if [ -f "$harnemons_dir/party.json" ]; then
+    species=$(grep -o '"lead": "[^"]*' "$harnemons_dir/party.json" | head -n 1 | cut -d'"' -f4 || echo "$species")
+  elif [ -f "$harnemons_dir/partner.json" ]; then
+    species=$(grep -o '"species": "[^"]*' "$harnemons_dir/partner.json" | head -n 1 | cut -d'"' -f4 || echo "$species")
+  fi
+  if [ -f "$harnemons_dir/partner.json" ]; then
+    p_name=$(grep -o '"name": "[^"]*' "$harnemons_dir/partner.json" | head -n 1 | cut -d'"' -f4 || echo "$p_name")
+  fi
+
+  # 파티 전체를 지우므로 종족을 가리지 않고 실제 파일 수를 센다
+  local entries=0 rules=0 skills=0 f
+  for f in "$harnemons_dir"/*/rules/*.md; do
+    [ -f "$f" ] || continue
+    rules=$((rules + 1))
+  done
+  for f in "$harnemons_dir"/*/skills/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    skills=$((skills + 1))
+  done
+  for f in "$harnemons_dir"/*/memory/episodes/*.md; do
+    [ -f "$f" ] || continue
+    entries=$((entries + $({ grep -c '^- \[' "$f" || true; } 2>/dev/null)))
+  done
+
+  echo ""
+  echo "👋 [Harnemon Release] Releasing '$p_name' from: $target_dir"
+  echo "──────────────────────────────────────────────"
+  echo "   Deletes .harnemons/ — rules: $rules · moves: $skills · episode entries: $entries"
+  echo "   Removes the harnemon marker blocks from .agents/AGENTS.md, keeping anything you wrote"
+  echo "   Unlinks .agents/skills, .claude/skills, and the CLAUDE.md / GEMINI.md bridges"
+  echo "   Leaves your ~/.harnemon global belt and Harnedex untouched"
+  echo "──────────────────────────────────────────────"
+
+  if [ "$force" = false ]; then
+    local reply=""
+    printf "   Type the species name to confirm (%s): " "$species"
+    read -r reply || true
+    if [ "$reply" != "$species" ]; then
+      echo "❌ Aborted. Nothing was removed."
+      exit 1
+    fi
+  fi
+
+  # 1. 마크다운에서 하네몬이 소유한 블록만 걷어내고 사람이 쓴 문단은 남긴다
+  local agents_md="$target_dir/.agents/AGENTS.md"
+  if [ -f "$agents_md" ]; then
+    local block
+    for block in partner rules party skills hooks; do
+      md_block_drop "$agents_md" "$block"
+    done
+    if ! grep -qv '^\(# Harnemon Operating Rules (AGENTS.md)\)\?$' "$agents_md"; then
+      rm -f "$agents_md"
+      echo "   🗑️  Removed .agents/AGENTS.md (nothing but Harnemon wiring was left)"
+    else
+      echo "   ✂️  Unwired the harnemon blocks from .agents/AGENTS.md"
+    fi
+  fi
+
+  # 2. 하네몬이 건 심링크와 다리 파일만 정리한다
+  local link
+  for link in "$target_dir/.agents/skills" "$target_dir/.claude/skills"; do
+    if [ -L "$link" ] && case "$(readlink "$link")" in *.harnemons/*) true ;; *) false ;; esac; then
+      rm -f "$link"
+      echo "   🔗 Unlinked ${link#$target_dir/}"
+    fi
+  done
+
+  local bridge
+  for bridge in "$target_dir/.claude/CLAUDE.md" "$target_dir/.gemini/GEMINI.md"; do
+    if [ -f "$bridge" ] && [ "$(cat "$bridge")" = "@../.agents/AGENTS.md" ]; then
+      rm -f "$bridge"
+      echo "   🗑️  Removed ${bridge#$target_dir/}"
+    fi
+  done
+
+  # 3. 하네몬이 설치한 것과 바이트가 같은 git 훅만 되돌린다
+  local hk hname installed
+  for hk in "$harnemons_dir"/*/hooks/*; do
+    [ -d "$hk" ] || continue
+    hname="$(basename "$hk")"
+    installed="$target_dir/.git/hooks/$hname"
+    [ -f "$installed" ] || continue
+    if [ -f "$hk/$hname" ] && cmp -s "$installed" "$hk/$hname"; then
+      rm -f "$installed"
+      echo "   🪝 Removed .git/hooks/$hname"
+    else
+      echo "   ⚠️  Kept .git/hooks/$hname — it no longer matches the one Harnemon installed"
+    fi
+  done
+
+  # 4. .gitignore에서는 하네몬만의 것이 확실한 줄만 걷어낸다
+  local gitignore="$target_dir/.gitignore"
+  if [ -f "$gitignore" ] && grep -q '^\.harnemons/$' "$gitignore"; then
+    local tmp_gi
+    tmp_gi="$(mktemp)"
+    grep -v -e '^\.harnemons/$' -e '^# Harnemon Personal Companion$' "$gitignore" \
+      | awk 'NF || prev { print } { prev = NF }' > "$tmp_gi"
+    mv "$tmp_gi" "$gitignore"
+    echo "   ✂️  Removed the .harnemons/ entry from .gitignore"
+    if grep -qE '^\.(claude|gemini|agents)/$' "$gitignore"; then
+      echo "   ℹ️  Left .claude/, .gemini/, .agents/ in .gitignore — they are not Harnemon's alone"
+    fi
+  fi
+
+  rm -rf "$harnemons_dir"
+  echo "   🗑️  Removed .harnemons/"
+
+  local dir
+  for dir in "$target_dir/.agents" "$target_dir/.claude" "$target_dir/.gemini"; do
+    rmdir "$dir" 2>/dev/null || true
+  done
+
+  echo "──────────────────────────────────────────────"
+  echo "✨ '$p_name' has been released back into the wild."
+  echo "   Adopt a new partner any time: harnemon adopt   ·   harnemon incubate"
+}
 
 cmd_setup() {
   echo "⚡ [Harnemon Global Setup] Setting up Global Belt and Agent Awareness..."
@@ -2406,6 +2545,10 @@ case "${1:-}" in
   dismiss|remove)
     shift
     cmd_dismiss "$@"
+    ;;
+  release|uninstall)
+    shift
+    cmd_release "$@"
     ;;
   incubate|egg)
     shift

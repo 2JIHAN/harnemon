@@ -1033,27 +1033,11 @@ EOF
     md_block_drop "$agents_md" "party"
   fi
 
-  local mem_body="## Distilled Memories (MEMORY.md)"
-  mem_body="$mem_body
-### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Memory
+  local mem_body="## Distilled Memory (MEMORY.md)
 @../.harnemons/$lead_species/memory/MEMORY.md"
-  for sdir in "$harnemons_dir/"*; do
-    [ -d "$sdir" ] || continue
-    sname="$(basename "$sdir")"
-    [ "$sname" = "$lead_species" ] && continue
-    [ "$sname" = "egg" ] && continue
-    if [ -f "$sdir/memory/MEMORY.md" ]; then
-      mem_body="$mem_body
-
-### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Memory
-@../.harnemons/$sname/memory/MEMORY.md"
-    fi
-  done
   printf '%s\n' "$mem_body" | md_block_write "$agents_md" "memory"
 
   local rules_body="## Rules (Always-on)" rule_count=0 rf bname
-  rules_body="$rules_body
-### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Rules"
   for rf in "$species_dir/rules/"*.md; do
     [ -f "$rf" ] || continue
     bname="$(basename "$rf")"
@@ -1061,83 +1045,22 @@ EOF
 @../.harnemons/$lead_species/rules/$bname"
     rule_count=$((rule_count + 1))
   done
-  for sdir in "$harnemons_dir/"*; do
-    [ -d "$sdir" ] || continue
-    sname="$(basename "$sdir")"
-    [ "$sname" = "$lead_species" ] && continue
-    [ "$sname" = "egg" ] && continue
-    if [ -d "$sdir/rules" ]; then
-      rules_body="$rules_body
-
-### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Rules"
-      for rf in "$sdir/rules/"*.md; do
-        [ -f "$rf" ] || continue
-        bname="$(basename "$rf")"
-        rules_body="$rules_body
-@../.harnemons/$sname/rules/$bname"
-        rule_count=$((rule_count + 1))
-      done
-    fi
-  done
   printf '%s\n' "$rules_body" | md_block_write "$agents_md" "rules"
 
-  local sem_body="## Semantic Knowledge (On-demand)"
-  sem_body="$sem_body
-### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Semantic Knowledge
+  local sem_body="## Semantic Knowledge (On-demand)
 @../.harnemons/$lead_species/memory/semantic/INDEX.md"
-  for sdir in "$harnemons_dir/"*; do
-    [ -d "$sdir" ] || continue
-    sname="$(basename "$sdir")"
-    [ "$sname" = "$lead_species" ] && continue
-    [ "$sname" = "egg" ] && continue
-    if [ -f "$sdir/memory/semantic/INDEX.md" ]; then
-      sem_body="$sem_body
-
-### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Semantic Knowledge
-@../.harnemons/$sname/memory/semantic/INDEX.md"
-    fi
-  done
   printf '%s\n' "$sem_body" | md_block_write "$agents_md" "semantic"
 
-  local skills_body="## Skills (On-demand)"
-  skills_body="$skills_body
-### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Skills
+  local skills_body="## Skills (On-demand)
 @../.harnemons/$lead_species/skills/INDEX.md"
-  for sdir in "$harnemons_dir/"*; do
-    [ -d "$sdir" ] || continue
-    sname="$(basename "$sdir")"
-    [ "$sname" = "$lead_species" ] && continue
-    [ "$sname" = "egg" ] && continue
-    if [ -f "$sdir/skills/INDEX.md" ]; then
-      skills_body="$skills_body
-
-### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Skills
-@../.harnemons/$sname/skills/INDEX.md"
-    fi
-  done
   printf '%s\n' "$skills_body" | md_block_write "$agents_md" "skills"
 
-  local hooks_body="## Enforced Gates (Hooks)" hook_count=0 hk hname
-  for hk in "$species_dir/hooks/"*; do
-    [ -d "$hk" ] || continue
-    hname="$(basename "$hk")"
-    hooks_body="$hooks_body
-- \`$hname\` — \`.harnemons/$lead_species/hooks/$hname/\`"
-    hook_count=$((hook_count + 1))
-  done
-  if [ "$hook_count" -gt 0 ]; then
-    printf '%s\n' "$hooks_body" | md_block_write "$agents_md" "hooks"
-  else
-    md_block_drop "$agents_md" "hooks"
-  fi
+  md_block_drop "$agents_md" "hooks"
 
   echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
   echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
 
-  local summary="   🔌 Wired $rule_count rule(s), memories, and skills into .agents/AGENTS.md"
-  if [ "$hook_count" -gt 0 ]; then
-    summary="$summary ($hook_count hook gate(s) listed)"
-  fi
+  local summary="   🔌 Wired $rule_count rule(s), memory, and skills for '$p_name' into .agents/AGENTS.md"
   echo "$summary"
 }
 

@@ -1088,7 +1088,23 @@ EOF
   echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
   echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
 
-  local summary="   🔌 Wired $rule_count rule(s) and the skills catalog into .agents/AGENTS.md"
+  local target_hooks_json="$target_dir/.agents/hooks.json"
+  if [ ! -f "$target_hooks_json" ]; then
+    cat << 'HOOKS_EOF' > "$target_hooks_json"
+{
+  "transclusion-engine": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 ~/.agents/scripts/transclude.py"
+      }
+    ]
+  }
+}
+HOOKS_EOF
+  fi
+
+  local summary="   🔌 Wired $rule_count rule(s), memories, and skills into .agents/AGENTS.md"
   if [ "$hook_count" -gt 0 ]; then
     summary="$summary ($hook_count hook gate(s) listed)"
   fi
@@ -1289,7 +1305,7 @@ AWARENESS
 
   # 4. Global Transclusion Dispatcher & PreInvocation Hook Setup
   mkdir -p "$global_agents_dir/scripts"
-  local global_transclude_src="$GLOBAL_HOME/templates/egg/scripts/transclude.py"
+  local global_transclude_src="$GLOBAL_HOME/bin/transclude.py"
   local global_transclude_dest="$global_agents_dir/scripts/transclude.py"
   if [ -f "$global_transclude_src" ]; then
     cp -f "$global_transclude_src" "$global_transclude_dest"

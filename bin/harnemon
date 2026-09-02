@@ -1016,6 +1016,7 @@ EOF
     sname="$(basename "$sdir")"
     [ "$sname" = "$lead_species" ] && continue
     [ "$sname" = "egg" ] && continue
+    [ "$sname" = "rules" ] && continue
     s_part="$sdir/partner.json"
     sn="$sname"; st=""; sd=""
     if [ -f "$s_part" ]; then
@@ -1038,9 +1039,19 @@ EOF
   printf '%s\n' "$mem_body" | md_block_write "$agents_md" "memory"
 
   local rules_body="## Rules (Always-on)" rule_count=0 rf bname
+  if [ -d "$harnemons_dir/rules" ]; then
+    for rf in "$harnemons_dir/rules/"*.md; do
+      [ -f "$rf" ] || continue
+      bname="$(basename "$rf")"
+      rules_body="$rules_body
+@../.harnemons/rules/$bname"
+      rule_count=$((rule_count + 1))
+    done
+  fi
   for rf in "$species_dir/rules/"*.md; do
     [ -f "$rf" ] || continue
     bname="$(basename "$rf")"
+    [ "$bname" = "harness-evolution.md" ] && continue
     rules_body="$rules_body
 @../.harnemons/$lead_species/rules/$bname"
     rule_count=$((rule_count + 1))

@@ -980,6 +980,15 @@ harnemon_sync_skills_dir() {
   fi
 }
 
+harnemon_sync_common_rules() {
+  local target_dir="$1"
+  local src="$SCRIPT_DIR/rules"
+  [ -d "$src" ] || src="$GLOBAL_HOME/rules"
+  [ -d "$src" ] || return 0
+  mkdir -p "$target_dir/.harnemons/rules"
+  cp "$src/"*.md "$target_dir/.harnemons/rules/" 2>/dev/null || true
+}
+
 generate_agents_md() {
   local target_dir="$1"
   local lead_species="$2"
@@ -990,6 +999,7 @@ generate_agents_md() {
   local label="${7:-Active Lead}"
 
   harnemon_sync_skills_dir "$target_dir"
+  harnemon_sync_common_rules "$target_dir"
 
   local harnemons_dir="$target_dir/.harnemons"
   local species_dir="$harnemons_dir/$lead_species"
@@ -1776,7 +1786,7 @@ sprite_link_partner() {
 # layer, written once at hatch and tended afterwards by harnemon rest.
 
 MEMORY_HATCH_MIN=60
-MEMORY_BASE_RULES=" incubation-kernel harness-evolution "
+MEMORY_BASE_RULES=" incubation-kernel harness-evolution self-learning "
 MEMORY_BASE_SKILLS=" harness-evolution "
 
 memory_species_dir() {
@@ -2514,45 +2524,48 @@ cmd_audit() {
   local issues=0
 
   echo "📜 Checking Abilities (Rules)..."
-  local rules_dir="$target_dir/rules"
-  if [ ! -d "$rules_dir" ]; then
-    local h_rules
-    h_rules="$(find "$target_dir/.harnemons" -maxdepth 2 -type d -name "rules" 2>/dev/null | head -n 1 || true)"
-    if [ -n "$h_rules" ] && [ -d "$h_rules" ]; then
-      rules_dir="$h_rules"
-    elif [ -d "$target_dir/.agents/rules" ]; then
-      rules_dir="$target_dir/.agents/rules"
+  local rules_dirs=""
+  if [ -d "$target_dir/rules" ]; then
+    rules_dirs="$target_dir/rules"
+  else
+    rules_dirs="$(find "$target_dir/.harnemons" -maxdepth 2 -type d -name "rules" 2>/dev/null | sort || true)"
+    if [ -z "$rules_dirs" ] && [ -d "$target_dir/.agents/rules" ]; then
+      rules_dirs="$target_dir/.agents/rules"
     fi
   fi
 
-  local has_evolution=0
-  if [ -d "$rules_dir" ]; then
-    for rf in "$rules_dir/"*.md; do
-      [ -f "$rf" ] || continue
-      local lines
-      lines=$(wc -l < "$rf" | tr -d ' ')
-      local bname
-      bname=$(basename "$rf")
+  local has_evolution=0 evolution_rule="" rules_dir
+  if [ -n "$rules_dirs" ]; then
+    while IFS= read -r rules_dir; do
+      [ -d "$rules_dir" ] || continue
+      for rf in "$rules_dir/"*.md; do
+        [ -f "$rf" ] || continue
+        local lines
+        lines=$(wc -l < "$rf" | tr -d ' ')
+        local bname
+        bname=$(basename "$rf")
 
-      if [ "$bname" = "harness-evolution.md" ]; then
-        has_evolution=1
-      fi
+        if [ "$bname" = "self-learning.md" ] || [ "$bname" = "harness-evolution.md" ]; then
+          has_evolution=1
+          evolution_rule="$bname"
+        fi
 
-      if [ "$lines" -gt 100 ]; then
-        echo "   ⚠️  [Overburdened] '$bname' is $lines lines. Keep abilities < 100 lines."
-        echo "       Consider moving deep moves to an on-demand Skill and using Skill Routing."
-        issues=$((issues + 1))
-      else
-        echo "   ✅ '$bname' ($lines lines) — Healthy size"
-      fi
-    done
+        if [ "$lines" -gt 100 ]; then
+          echo "   ⚠️  [Overburdened] '$bname' is $lines lines. Keep abilities < 100 lines."
+          echo "       Consider moving deep moves to an on-demand Skill and using Skill Routing."
+          issues=$((issues + 1))
+        else
+          echo "   ✅ '$bname' ($lines lines) — Healthy size"
+        fi
+      done
+    done <<< "$rules_dirs"
   else
     echo "   ⚠️  No rules/abilities directory found."
     issues=$((issues + 1))
   fi
 
   if [ "$has_evolution" -eq 1 ]; then
-    echo "   🌟 Self-evolution ability (harness-evolution.md) is ACTIVE"
+    echo "   🌟 Self-evolution ability ($evolution_rule) is ACTIVE"
   else
     echo "   ℹ️  Self-evolution ability not found. Harnemon cannot autonomously evolve."
   fi

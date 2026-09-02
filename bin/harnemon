@@ -738,12 +738,6 @@ EOF
 }
 EOF
 
-  rm -rf "$target_dir/.agents/skills"
-  ln -sf "../.harnemons/$species/skills" "$target_dir/.agents/skills"
-
-  rm -rf "$target_dir/.claude/skills"
-  ln -sf "../.harnemons/$species/skills" "$target_dir/.claude/skills"
-
   generate_agents_md "$target_dir" "$species" "$p_name" "$p_type" "$p_desc"
 
   echo ""
@@ -782,6 +776,7 @@ cmd_dismiss() {
   fi
 
   rm -rf "$species_dir"
+  harnemon_sync_skills_dir "$target_dir"
   echo "👋 Dismissed '$species' from project party."
 }
 
@@ -938,6 +933,55 @@ hm_report() {
   done
 }
 
+harnemon_sync_skills_dir() {
+  local target_dir="$1"
+  local harnemons_dir="$target_dir/.harnemons"
+  local agents_skills="$target_dir/.agents/skills"
+  local claude_skills="$target_dir/.claude/skills"
+
+  [ -d "$harnemons_dir" ] || return 0
+
+  # If .agents/skills is a single symlink, replace it with a real directory
+  [ -L "$agents_skills" ] && rm -f "$agents_skills"
+  [ -L "$claude_skills" ] && rm -f "$claude_skills"
+  mkdir -p "$agents_skills" "$claude_skills"
+
+  # Clean existing symlinks in .agents/skills and .claude/skills
+  find "$agents_skills" -type l -delete 2>/dev/null || true
+  find "$claude_skills" -type l -delete 2>/dev/null || true
+
+  local lead_species=""
+  if [ -f "$harnemons_dir/partner.json" ]; then
+    lead_species=$(grep -o '"species": "[^"]*' "$harnemons_dir/partner.json" | head -n 1 | cut -d'"' -f4 || echo "")
+  fi
+
+  # First link party members' skills
+  local sdir sname skdir skname
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    sname="$(basename "$sdir")"
+    [ "$sname" = "egg" ] && continue
+    [ "$sname" = "$lead_species" ] && continue
+    [ -d "$sdir/skills" ] || continue
+    for skdir in "$sdir/skills/"*; do
+      [ -d "$skdir" ] || continue
+      skname="$(basename "$skdir")"
+      ln -sf "../../.harnemons/$sname/skills/$skname" "$agents_skills/$skname"
+      ln -sf "../../.harnemons/$sname/skills/$skname" "$claude_skills/$skname"
+    done
+  done
+
+  # Now link lead species' skills (takes precedence on conflict)
+  if [ -n "$lead_species" ] && [ -d "$harnemons_dir/$lead_species/skills" ]; then
+    for skdir in "$harnemons_dir/$lead_species/skills/"*; do
+      [ -d "$skdir" ] || continue
+      skname="$(basename "$skdir")"
+      ln -sf "../../.harnemons/$lead_species/skills/$skname" "$agents_skills/$skname"
+      ln -sf "../../.harnemons/$lead_species/skills/$skname" "$claude_skills/$skname"
+    done
+  fi
+}
+
 generate_agents_md() {
   local target_dir="$1"
   local lead_species="$2"
@@ -946,6 +990,8 @@ generate_agents_md() {
   local p_desc="$5"
   local intro="${6:-This project is governed by an adopted Harnemon companion with the 3 Pillars (Rule, Skill, Hook).}"
   local label="${7:-Active Lead}"
+
+  harnemon_sync_skills_dir "$target_dir"
 
   local harnemons_dir="$target_dir/.harnemons"
   local species_dir="$harnemons_dir/$lead_species"

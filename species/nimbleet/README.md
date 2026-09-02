@@ -27,6 +27,7 @@
 - **`delegate-to-aside/`** — Aside AI browser GUI automation for authenticated sessions
 - **`writing-docs/`** — Universal technical writing & 4-language i18n default standard
 - **`writing-docs-in-korean/`** — Fluent Korean documentation standard
+- **`graph-artifact-builder/`** — Standalone HTML artifacts with interactive node-edge graph (force-graph)
 - **`harness-evolution/`** — Skill synthesis playbook
 
 ### 🪝 Held Items (Hooks)

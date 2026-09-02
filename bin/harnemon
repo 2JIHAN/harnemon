@@ -235,6 +235,8 @@ cmd_adopt() {
       ;;
     *)
       local cat_json="$GLOBAL_HOME/catalog/$species/partner.json"
+      [ -f "$cat_json" ] || cat_json="$GLOBAL_HOME/species/$species/partner.json"
+      [ -f "$cat_json" ] || cat_json="$SCRIPT_DIR/species/$species/partner.json"
       if [ -f "$cat_json" ]; then
         species_name=$(grep -o '"name": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
         species_type=$(grep -o '"type": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
@@ -617,6 +619,8 @@ cmd_recruit() {
       ;;
     *)
       local cat_json="$GLOBAL_HOME/catalog/$species/partner.json"
+      [ -f "$cat_json" ] || cat_json="$GLOBAL_HOME/species/$species/partner.json"
+      [ -f "$cat_json" ] || cat_json="$SCRIPT_DIR/species/$species/partner.json"
       if [ -f "$cat_json" ]; then
         species_name=$(grep -o '"name": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
         species_type=$(grep -o '"type": "[^"]*' "$cat_json" | head -n 1 | cut -d'"' -f4)
@@ -658,25 +662,8 @@ cmd_recruit() {
 }
 EOF
 
-  local rules_src="$species_source/rules"
-  for rf in "$rules_src/"*.md; do
-    [ -f "$rf" ] || continue
-    local bname
-    bname="$(basename "$rf")"
-    cp "$rf" "$species_dir/rules/$bname"
-  done
-
-  local skills_src="$species_source/skills"
-  for sd in "$skills_src/"*; do
-    local sname
-    sname="$(basename "$sd")"
-    if [ -d "$sd" ]; then
-      mkdir -p "$species_dir/skills/$sname"
-      cp -R "$sd/"* "$species_dir/skills/$sname/"
-    elif [ -f "$sd" ]; then
-      cp "$sd" "$species_dir/skills/$sname"
-    fi
-  done
+  hm_sync "$species_source" "$species_dir" rules skills
+  hm_report
 
   local current_lead="nimbleet"
   if [ -f "$harnemons_dir/party.json" ]; then
@@ -851,6 +838,106 @@ md_block_drop() {
 }
 
 
+# ── 배포 파일 추적 (Managed File Manifest) ─────────────────────────
+# 하네몬이 설치한 파일의 해시를 종 폴더의 .harnemon-manifest 에 적어 둔다.
+# 다음 설치 때 현재 해시와 견주어, 사용자가 손댄 파일은 덮어쓰지 않고 남긴다.
+# 덕분에 같은 명령을 몇 번 돌려도 결과가 같고, 손질해 둔 규칙이 사라지지 않는다.
+
+hm_sha() { shasum -a 256 "$1" 2>/dev/null | awk '{print $1}'; }
+
+# 매니페스트에 적힌 해시를 읽는다. 기록이 없으면 빈 문자열이다.
+hm_recorded() {
+  [ -f "$1" ] || return 0
+  awk -F'\t' -v p="$2" '$2 == p { print $1; exit }' "$1"
+}
+
+# 배포 파일 하나를 설치한다. 손댄 파일은 건너뛰고 이름을 HM_KEPT 에 모은다.
+hm_install() {
+  local src="$1" dest="$2" rel="$3" mf="$4"
+  local src_sha cur rec
+  src_sha="$(hm_sha "$src")"
+
+  if [ -f "$dest" ]; then
+    cur="$(hm_sha "$dest")"
+    # 이미 같은 내용이면 손대지 않는다. 두 번 돌려도 결과가 같아야 한다.
+    if [ "$cur" = "$src_sha" ]; then
+      printf '%s\t%s\n' "$src_sha" "$rel" >> "$HM_NEW"
+      return 0
+    fi
+    rec="$(hm_recorded "$mf" "$rel")"
+    # 기록이 없으면 하네몬이 설치한 적 없는 파일이므로 손대지 않는다.
+    # 기록이 있어도 해시가 어긋나면 사용자가 고친 것이라 역시 남긴다.
+    if [ -z "$rec" ] || [ "$cur" != "$rec" ]; then
+      # 배포 기록은 원래 해시로 남긴다. 사용자 수정본 해시를 적어 두면
+      # 다음 정리 때 손대지 않은 파일로 오인해 지워 버린다.
+      [ -n "$rec" ] && printf '%s\t%s\n' "$rec" "$rel" >> "$HM_NEW"
+      HM_KEPT="$HM_KEPT $rel"
+      return 1
+    fi
+  fi
+
+  mkdir -p "$(dirname "$dest")"
+  cp "$src" "$dest"
+  printf '%s\t%s\n' "$src_sha" "$rel" >> "$HM_NEW"
+  HM_WROTE=$((HM_WROTE + 1))
+  return 0
+}
+
+# 지난번에 설치했으나 이번 배포에는 없는 파일을 거둔다. 손댄 파일은 남긴다.
+hm_prune() {
+  local dst="$1" mf="$2" scope="$3"
+  [ -f "$mf" ] || return 0
+  local sha rel f
+  while IFS=$'\t' read -r sha rel; do
+    [ -n "$rel" ] || continue
+    # 이번에 다룬 하위 폴더만 정리 대상이다.
+    case " $scope " in *" ${rel%%/*} "*) ;; *) continue ;; esac
+    awk -F'\t' -v p="$rel" '$2 == p { found = 1 } END { exit !found }' "$HM_NEW" && continue
+    f="$dst/$rel"
+    [ -f "$f" ] || continue
+    if [ "$(hm_sha "$f")" = "$sha" ]; then
+      rm -f "$f"
+      HM_REMOVED="$HM_REMOVED $rel"
+    else
+      # 폐기된 파일이라도 사용자가 손댔으면 남기고, 배포 기록도 그대로 둔다.
+      printf '%s\t%s\n' "$sha" "$rel" >> "$HM_NEW"
+      HM_KEPT="$HM_KEPT $rel"
+    fi
+  done < "$mf"
+}
+
+# 종 원본을 프로젝트 종 폴더로 옮긴다. 세 번째 인자부터 다룰 하위 폴더를 준다.
+# 여기서 준 폴더만 갱신과 정리의 대상이 되므로, rules 만 넘기면 skills 는 건드리지 않는다.
+hm_sync() {
+  local src="$1" dst="$2"; shift 2
+  local scope="$*"
+  local mf="$dst/.harnemon-manifest"
+  HM_NEW="$(mktemp)"; HM_KEPT=""; HM_REMOVED=""; HM_WROTE=0
+  local sub f rel
+  for sub in $scope; do
+    [ -d "$src/$sub" ] || continue
+    while IFS= read -r f; do
+      rel="${f#"$src"/}"
+      hm_install "$f" "$dst/$rel" "$rel" "$mf" || true
+    done < <(find "$src/$sub" -type f ! -name '.DS_Store')
+  done
+  hm_prune "$dst" "$mf" "$scope"
+  mkdir -p "$dst"
+  sort -u "$HM_NEW" > "$mf"
+  rm -f "$HM_NEW"
+}
+
+# 방금 동기화에서 지킨 파일과 거둔 파일을 알린다.
+hm_report() {
+  local rel
+  for rel in $HM_KEPT; do
+    echo "   ✋ Kept your edit: $rel (left untouched)"
+  done
+  for rel in $HM_REMOVED; do
+    echo "   🧹 Removed retired file: $rel"
+  done
+}
+
 generate_agents_md() {
   local target_dir="$1"
   local lead_species="$2"
@@ -877,16 +964,6 @@ generate_agents_md() {
 $intro
 EOF
 
-  local rules_body="## Active Abilities (Rules)" rule_count=0 rf bname
-  for rf in "$species_dir/rules/"*.md; do
-    [ -f "$rf" ] || continue
-    bname="$(basename "$rf")"
-    rules_body="$rules_body
-@../.harnemons/$lead_species/rules/$bname"
-    rule_count=$((rule_count + 1))
-  done
-  printf '%s\n' "$rules_body" | md_block_write "$agents_md" "rules"
-
   local party_body="## Party Roster & Specialists" party_count=0 sdir sname s_part sn st sd
   for sdir in "$harnemons_dir/"*; do
     [ -d "$sdir" ] || continue
@@ -910,8 +987,89 @@ EOF
     md_block_drop "$agents_md" "party"
   fi
 
-  printf '## Learned Moves (Skills Catalog)\n@../.harnemons/%s/skills/INDEX.md\n' "$lead_species" \
-    | md_block_write "$agents_md" "skills"
+  local mem_body="## Distilled Memories (MEMORY.md)"
+  mem_body="$mem_body
+### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Memory
+@../.harnemons/$lead_species/memory/MEMORY.md"
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    sname="$(basename "$sdir")"
+    [ "$sname" = "$lead_species" ] && continue
+    [ "$sname" = "egg" ] && continue
+    if [ -f "$sdir/memory/MEMORY.md" ]; then
+      mem_body="$mem_body
+
+### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Memory
+@../.harnemons/$sname/memory/MEMORY.md"
+    fi
+  done
+  printf '%s\n' "$mem_body" | md_block_write "$agents_md" "memory"
+
+  local rules_body="## Rules (Always-on)" rule_count=0 rf bname
+  rules_body="$rules_body
+### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Rules"
+  for rf in "$species_dir/rules/"*.md; do
+    [ -f "$rf" ] || continue
+    bname="$(basename "$rf")"
+    rules_body="$rules_body
+@../.harnemons/$lead_species/rules/$bname"
+    rule_count=$((rule_count + 1))
+  done
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    sname="$(basename "$sdir")"
+    [ "$sname" = "$lead_species" ] && continue
+    [ "$sname" = "egg" ] && continue
+    if [ -d "$sdir/rules" ]; then
+      rules_body="$rules_body
+
+### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Rules"
+      for rf in "$sdir/rules/"*.md; do
+        [ -f "$rf" ] || continue
+        bname="$(basename "$rf")"
+        rules_body="$rules_body
+@../.harnemons/$sname/rules/$bname"
+        rule_count=$((rule_count + 1))
+      done
+    fi
+  done
+  printf '%s\n' "$rules_body" | md_block_write "$agents_md" "rules"
+
+  local sem_body="## Semantic Knowledge (On-demand)"
+  sem_body="$sem_body
+### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Semantic Knowledge
+@../.harnemons/$lead_species/memory/semantic/INDEX.md"
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    sname="$(basename "$sdir")"
+    [ "$sname" = "$lead_species" ] && continue
+    [ "$sname" = "egg" ] && continue
+    if [ -f "$sdir/memory/semantic/INDEX.md" ]; then
+      sem_body="$sem_body
+
+### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Semantic Knowledge
+@../.harnemons/$sname/memory/semantic/INDEX.md"
+    fi
+  done
+  printf '%s\n' "$sem_body" | md_block_write "$agents_md" "semantic"
+
+  local skills_body="## Skills (On-demand)"
+  skills_body="$skills_body
+### $(echo "$lead_species" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Skills
+@../.harnemons/$lead_species/skills/INDEX.md"
+  for sdir in "$harnemons_dir/"*; do
+    [ -d "$sdir" ] || continue
+    sname="$(basename "$sdir")"
+    [ "$sname" = "$lead_species" ] && continue
+    [ "$sname" = "egg" ] && continue
+    if [ -f "$sdir/skills/INDEX.md" ]; then
+      skills_body="$skills_body
+
+### $(echo "$sname" | awk '{print toupper(substr($0,1,1)) substr($0,2)}') Skills
+@../.harnemons/$sname/skills/INDEX.md"
+    fi
+  done
+  printf '%s\n' "$skills_body" | md_block_write "$agents_md" "skills"
 
   local hooks_body="## Enforced Gates (Hooks)" hook_count=0 hk hname
   for hk in "$species_dir/hooks/"*; do
@@ -1129,6 +1287,33 @@ AWARENESS
     fi
   fi
 
+  # 4. Global Transclusion Dispatcher & PreInvocation Hook Setup
+  mkdir -p "$global_agents_dir/scripts"
+  local global_transclude_src="$GLOBAL_HOME/templates/egg/scripts/transclude.py"
+  local global_transclude_dest="$global_agents_dir/scripts/transclude.py"
+  if [ -f "$global_transclude_src" ]; then
+    cp -f "$global_transclude_src" "$global_transclude_dest"
+    chmod +x "$global_transclude_dest"
+    echo "✅ Deployed Global Transclusion Engine: $global_transclude_dest"
+  fi
+
+  local global_hooks_json="$global_agents_dir/hooks.json"
+  if [ ! -f "$global_hooks_json" ]; then
+    cat << 'HOOKS_EOF' > "$global_hooks_json"
+{
+  "transclusion-engine": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 ~/.agents/scripts/transclude.py"
+      }
+    ]
+  }
+}
+HOOKS_EOF
+    echo "✅ Configured Global Agent Hook: $global_hooks_json"
+  fi
+
   echo "──────────────────────────────────────────────"
   echo "✨ Global Harnemon Belt successfully initialized!"
   echo "   All AI agents across all repositories are now Harnemon-aware."
@@ -1180,12 +1365,8 @@ cmd_update() {
       [ ! -d "$species_source" ] && [ -d "$GLOBAL_HOME/catalog/$sname" ] && species_source="$GLOBAL_HOME/catalog/$sname"
 
       if [ -d "$species_source/rules" ]; then
-        for rf in "$species_source/rules/"*.md; do
-          [ -f "$rf" ] || continue
-          local bname
-          bname="$(basename "$rf")"
-          cp "$rf" "$sdir/rules/$bname"
-        done
+        hm_sync "$species_source" "$sdir" rules
+        hm_report
       fi
     done
 
@@ -1642,13 +1823,15 @@ memory_episode_file() {
 }
 
 memory_scaffold() {
-  # species_dir -> ensures the episode ledger exists, egg or mature alike
-  local dir="$1/memory" src
-  mkdir -p "$dir/episodes"
-  if [ ! -f "$dir/README.md" ]; then
-    for src in "$SCRIPT_DIR/templates/egg/memory/README.md" "$GLOBAL_HOME/templates/egg/memory/README.md"; do
-      [ -f "$src" ] && { cp "$src" "$dir/README.md"; break; }
-    done
+  # species_dir -> ensures the episode ledger, semantic catalog, and MEMORY.md exist
+  local dir="$1/memory" sname
+  sname="$(basename "$1")"
+  mkdir -p "$dir/episodes" "$dir/semantic"
+  if [ ! -f "$dir/MEMORY.md" ]; then
+    printf '# %s Distilled Memory (MEMORY.md)\n\nDistilled observations, corrections, and learned conventions.\n' "$sname" > "$dir/MEMORY.md"
+  fi
+  if [ ! -f "$dir/semantic/INDEX.md" ]; then
+    printf '# %s Semantic Knowledge Catalog (INDEX.md)\n\n| Topic | Domain / Scope | Location |\n| :--- | :--- | :--- |\n' "$sname" > "$dir/semantic/INDEX.md"
   fi
 }
 
@@ -2165,7 +2348,13 @@ cmd_feed() {
   "adopted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
-  sprite_write "$species_dir" "$p_species" "$p_type" 64 2>/dev/null || true
+  if [ -f "$species_source/sprite.json" ]; then
+    cp "$species_source/sprite.json" "$species_dir/sprite.json"
+    sprite_render "$species_dir/sprite.json" svg 8 > "$species_dir/avatar.svg" 2>/dev/null \
+      || sprite_write "$species_dir" "$p_species" "$p_type" 64 2>/dev/null || true
+  else
+    sprite_write "$species_dir" "$p_species" "$p_type" 64 2>/dev/null || true
+  fi
 
   cat << EOF > "$species_dir/partner.json"
 {
@@ -2178,37 +2367,11 @@ EOF
 }
 EOF
 
-  echo "📜 Bestowing Abilities (Rules)..."
-  local rules_target="$species_dir/rules"
-  mkdir -p "$rules_target"
-  local rules_src="$species_source/rules"
-  for rf in "$rules_src/"*.md; do
-    [ -f "$rf" ] || continue
-    local bname
-    bname="$(basename "$rf")"
-        cp "$rf" "$rules_target/$bname"
-    echo "   📄 Installed ability: .harnemons/$p_species/rules/$bname"
-  done
-
-  echo "🧰 Imprinting Moves (Skills)..."
-  local skills_target="$species_dir/skills"
-  mkdir -p "$skills_target"
-  local skills_src="$species_source/skills"
-  for sd in "$skills_src/"*; do
-    local sname
-    sname="$(basename "$sd")"
-    if [ -d "$sd" ]; then
-      mkdir -p "$skills_target/$sname"
-      cp -R "$sd/"* "$skills_target/$sname/"
-      echo "   📁 Learned move: .harnemons/$p_species/skills/$sname"
-    elif [ -f "$sd" ]; then
-      cp "$sd" "$skills_target/$sname"
-    fi
-  done
-  if [ -f "$skills_src/INDEX.md" ]; then
-    cp "$skills_src/INDEX.md" "$skills_target/INDEX.md"
-    echo "   📋 Indexed catalog: .harnemons/$p_species/skills/INDEX.md"
-  fi
+  echo "📜 Bestowing Abilities and Imprinting Moves..."
+  mkdir -p "$species_dir/rules" "$species_dir/skills"
+  hm_sync "$species_source" "$species_dir" rules skills
+  echo "   📄 Installed $HM_WROTE file(s) into .harnemons/$p_species/"
+  hm_report
 
   memory_scaffold "$species_dir"
   echo "🧠 Opening Episode Ledger..."
@@ -2218,10 +2381,13 @@ EOF
     echo "🪝 Equipping Held Items (Git Hooks)..."
     local hooks_copy="$species_dir/hooks"
     mkdir -p "$hooks_copy"
-    if [ -d "$SCRIPT_DIR/hooks" ]; then
-      cp -R "$SCRIPT_DIR/hooks/"* "$hooks_copy/" 2>/dev/null || true
-      if [ -f "$SCRIPT_DIR/hooks/install.sh" ]; then
-        bash "$SCRIPT_DIR/hooks/install.sh" "$target_dir" >/dev/null 2>&1 || true
+    local hooks_src="$SCRIPT_DIR/hooks"
+    [ -d "$species_source/hooks" ] && hooks_src="$species_source/hooks"
+    if [ -d "$hooks_src" ]; then
+      cp -R "$hooks_src/"* "$hooks_copy/" 2>/dev/null || true
+      chmod +x "$hooks_copy/"* 2>/dev/null || true
+      if [ -f "$hooks_src/install.sh" ]; then
+        bash "$hooks_src/install.sh" "$target_dir" >/dev/null 2>&1 || true
       fi
     fi
     git -C "$target_dir" config core.hooksPath .git/hooks 2>/dev/null || true
@@ -2499,6 +2665,23 @@ cmd_dex() {
   echo "No.004 Yagni       — Grass Type 🍃"
   echo "       • Ponytail: Ladder of Laziness, complexity pruning (-N lines)"
   echo "       • Entry: docs/case-studies/04-dietrich-ponytail.md"
+
+  local builtin=" egg nimbleet fortoise monkin yagni " sd sname sp_json sn st sr sdesc
+  for sd in "$SCRIPT_DIR/species/"*; do
+    [ -d "$sd" ] || continue
+    sname="$(basename "$sd")"
+    case "$builtin" in *" $sname "*) continue ;; esac
+    sp_json="$sd/partner.json"
+    [ -f "$sp_json" ] || continue
+    sn=$(grep -o '"name": "[^"]*' "$sp_json" | head -n 1 | cut -d'"' -f4)
+    st=$(grep -o '"type": "[^"]*' "$sp_json" | head -n 1 | cut -d'"' -f4)
+    sr=$(grep -o '"role": "[^"]*' "$sp_json" | head -n 1 | cut -d'"' -f4)
+    sdesc=$(grep -o '"description": "[^"]*' "$sp_json" | head -n 1 | cut -d'"' -f4)
+    echo ""
+    echo "🌟 $sn — $st${sr:+  ($sr)}"
+    echo "       • $sdesc"
+    echo "       • Adopt: harnemon adopt $sname"
+  done
 
   if [ -d "$GLOBAL_HOME/catalog" ]; then
     for cd in "$GLOBAL_HOME/catalog/"*; do

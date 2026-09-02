@@ -28,6 +28,10 @@ The comprehensive knowledge base, canonical worldbuilding, and architectural the
   - Pillar 2: Skill (Moves / On-demand specialized playbooks)
   - Pillar 3: Hook (Held Items / Deterministic OS & Git physical gates)
   - The 3 Invariants: Idempotency, Auto-wiring, Zero-dependency
+- **[`memory-architecture.md`](memory-architecture.md)** — **The 3-Layer Memory Architecture & Autonomous Lifecycle**
+  - L1 Resident Memory (`MEMORY.md`), L2 Semantic Knowledge (`semantic/`), L3 Raw Episodes (`episodes/`)
+  - In-session autonomous episodic logging & mid-session distillation
+  - 3-occurrence promotion standard (Rules vs Skills vs Hooks)
 - **[`harnemon-incubator.md`](harnemon-incubator.md)** — **The Harnemon Incubator & Hatching System**
   - Blank Egg 🥚 starter with 0 pre-packaged rules
   - The 2-Correction feedback absorption loop

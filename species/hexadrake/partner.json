@@ -1,0 +1,8 @@
+{
+  "species": "hexadrake",
+  "avatar": "avatar.svg",
+  "name": "Hexadrake",
+  "type": "Dragon 🐉",
+  "role": "Ports & Adapters Architect",
+  "description": "Hexagonal domain core, one aggregate per transaction, contract-first APIs and reversible migrations"
+}

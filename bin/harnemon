@@ -268,11 +268,9 @@ cmd_incubate() {
   echo "   Trait: A blank canvas absorbing your coding habits, stack conventions, and 2-correction feedback."
   echo "──────────────────────────────────────────────"
 
-  local egg_template="$SCRIPT_DIR/templates/egg"
+  local egg_template="$SCRIPT_DIR/species/egg"
   if [ ! -d "$egg_template" ] && [ -d "$GLOBAL_HOME/species/egg" ]; then
     egg_template="$GLOBAL_HOME/species/egg"
-  elif [ ! -d "$egg_template" ] && [ -d "$GLOBAL_HOME/templates/egg" ]; then
-    egg_template="$GLOBAL_HOME/templates/egg"
   fi
   if [ ! -d "$egg_template" ]; then
     echo "❌ Error: Egg template not found at $egg_template"

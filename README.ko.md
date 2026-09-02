@@ -208,11 +208,6 @@ harnemon dex
 harnemon/
 ├── bin/
 │   └── harnemon                             # ⚡ 전역 트레이너 CLI (v0.9.0)
-├── templates/                               # 🥚 [인큐베이터 기본 템플릿]
-│   └── egg/                                 # • No.000: 빈 알 인큐베이터 스타터 (🌱)
-│       ├── partner.json & memory/           #   - 인큐베이션 일지 및 경험치 관리
-│       ├── rules/                           #   - 2회 교정 피드백 커널 및 진화 규칙
-│       └── skills/                          #   - Hermes 자율 진화 스킬
 ├── species/                                 # 🧬 [완성된 1세대 하네몬 종 청사진]
 │   ├── nimbleet/                            # • No.001: 번개 라우터 (⚡)
 │   ├── fortoise/                            # • No.002: 설정 방어 요새 (💧)

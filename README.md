@@ -208,11 +208,6 @@ Your adopted Harnemon doesn't stay static—it learns and evolves as you code to
 harnemon/
 ├── bin/
 │   └── harnemon                             # ⚡ Global Trainer CLI (v0.9.0)
-├── templates/                               # 🥚 [Incubation Scaffolding Templates]
-│   └── egg/                                 # • No.000: Blank Canvas Egg Starter (🌱)
-│       ├── partner.json & memory/           #   - Incubation log & exp progression
-│       ├── rules/                           #   - 2-correction feedback kernel & evolution
-│       └── skills/                          #   - Hermes self-evolution engine
 ├── species/                                 # 🧬 [Mature Gen-1 Species Blueprints]
 │   ├── nimbleet/                            # • No.001: Lightning Router (⚡)
 │   ├── fortoise/                            # • No.002: Config-Guard Fortress (💧)

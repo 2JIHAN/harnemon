@@ -92,9 +92,10 @@
 ## ⚡ クイックスタート
 
 ```bash
-# 1. グローバルツールのインストール
-git clone https://github.com/2JIHAN/harnemon.git ~/.harnemon
-ln -sf ~/.harnemon/bin/harnemon ~/.local/bin/harnemon
+# 1. グローバルツールのインストール（最新リリース）
+mkdir -p ~/.harnemon
+curl -fsSL https://github.com/2JIHAN/harnemon/releases/latest/download/harnemon.tar.gz | tar -xz -C ~/.harnemon
+~/.harnemon/bin/harnemon setup
 
 # 2. プロジェクトで採用またはタマゴを配置
 cd /path/to/my-project

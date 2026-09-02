@@ -16,9 +16,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Build Install Tarball
+        run: |
+          mkdir -p dist
+          tar -czf dist/harnemon.tar.gz \
+            --exclude-vcs \
+            --exclude='./.github' \
+            --exclude='./dist' \
+            --exclude='.DS_Store' \
+            .
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           draft: false
           prerelease: false
           generate_release_notes: true
+          files: dist/harnemon.tar.gz

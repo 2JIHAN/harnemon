@@ -3,7 +3,9 @@
 # The Pokémon-Style, Zero-Dependency Autonomous Harness Companion for AI Coding Agents.
 set -euo pipefail
 
-VERSION="0.9.3"
+VERSION="0.9.4"
+REPO_SLUG="2JIHAN/harnemon"
+RELEASE_URL="https://github.com/$REPO_SLUG/releases/latest/download/harnemon.tar.gz"
 
 resolve_script_dir() {
   local src="${BASH_SOURCE[0]}" dir
@@ -1324,6 +1326,18 @@ cmd_update() {
   if [ -d "$repo_dir/.git" ]; then
     echo "📦 Checking latest changes in $repo_dir..."
     git -C "$repo_dir" pull --ff-only origin main 2>/dev/null || echo "ℹ️ Git pull skipped."
+  elif command -v curl >/dev/null 2>&1; then
+    echo "📦 Downloading the latest release into $repo_dir..."
+    local tmp
+    tmp="$(mktemp -d)"
+    if curl -fsSL "$RELEASE_URL" 2>/dev/null | tar -xz -C "$tmp" 2>/dev/null; then
+      cp -R "$tmp/." "$repo_dir/"
+      chmod +x "$repo_dir/bin/harnemon" 2>/dev/null || true
+      echo "   ✅ Global belt updated from the latest release."
+    else
+      echo "ℹ️ Release download skipped."
+    fi
+    rm -rf "$tmp"
   fi
 
   # 2. Refresh Global Agent Awareness & PATH via cmd_setup
@@ -1399,12 +1413,12 @@ cmd_version() {
     local latest_tag=""
     # 1. Check raw remote main branch version (immediate & zero-dep)
     if command -v curl >/dev/null 2>&1; then
-      latest_tag=$(curl -s --connect-timeout 2 https://raw.githubusercontent.com/2JIHAN/harnemon/main/bin/harnemon 2>/dev/null | grep '^VERSION=' | head -n 1 | cut -d'"' -f2 || true)
+      latest_tag=$(curl -s --connect-timeout 2 "https://api.github.com/repos/$REPO_SLUG/releases/latest" 2>/dev/null | grep '"tag_name"' | head -n 1 | cut -d'"' -f4 || true)
     fi
 
     # 2. Check remote tags if raw lookup empty
     if [ -z "$latest_tag" ] && command -v git >/dev/null 2>&1; then
-      latest_tag=$(git ls-remote --tags --refs https://github.com/2JIHAN/harnemon.git 2>/dev/null | tail -n 1 | awk -F/ '{print $NF}' || true)
+      latest_tag=$(git ls-remote --tags --refs "https://github.com/$REPO_SLUG.git" 2>/dev/null | tail -n 1 | awk -F/ '{print $NF}' || true)
     fi
 
     if [ -n "$latest_tag" ]; then

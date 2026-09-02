@@ -92,9 +92,10 @@
 ## ⚡ 快速开始 (Quickstart)
 
 ```bash
-# 1. 安装全局工具
-git clone https://github.com/2JIHAN/harnemon.git ~/.harnemon
-ln -sf ~/.harnemon/bin/harnemon ~/.local/bin/harnemon
+# 1. 安装全局工具（最新发行版）
+mkdir -p ~/.harnemon
+curl -fsSL https://github.com/2JIHAN/harnemon/releases/latest/download/harnemon.tar.gz | tar -xz -C ~/.harnemon
+~/.harnemon/bin/harnemon setup
 
 # 2. 在项目中领养或放置空白蛋
 cd /path/to/my-project

@@ -1088,22 +1088,6 @@ EOF
   echo "@../.agents/AGENTS.md" > "$target_dir/.claude/CLAUDE.md"
   echo "@../.agents/AGENTS.md" > "$target_dir/.gemini/GEMINI.md"
 
-  local target_hooks_json="$target_dir/.agents/hooks.json"
-  if [ ! -f "$target_hooks_json" ]; then
-    cat << 'HOOKS_EOF' > "$target_hooks_json"
-{
-  "transclusion-engine": {
-    "PreInvocation": [
-      {
-        "type": "command",
-        "command": "python3 ~/.agents/scripts/transclude.py"
-      }
-    ]
-  }
-}
-HOOKS_EOF
-  fi
-
   local summary="   🔌 Wired $rule_count rule(s), memories, and skills into .agents/AGENTS.md"
   if [ "$hook_count" -gt 0 ]; then
     summary="$summary ($hook_count hook gate(s) listed)"

@@ -1,100 +1,95 @@
-# 하네몬 인큐베이터 & 부화 시스템 (Harnemon Incubator & Hatching System)
+# Harnemon Incubator & Hatching System
 
-미리 만들어진 규칙 템플릿을 억지로 주입하지 않고, **완전 빈 도화지 알(Blank Egg 🥚)**에서 출발하여 사용자와의 코딩 세션을 통해 맞춤형 하네몬 종(Species)으로 성장·부화하는 메커니즘을 정의한다.
+Defines the incubation mechanics of starting from a **Blank Egg 🥚** with zero pre-packaged rules, absorbing developer conventions across pair-programming sessions, and graduating into a mature, custom Harnemon species.
 
 ---
 
-## 🌟 핵심 철학: 빈 알(Egg)에서 성체(Species)로
+## 🌟 Core Philosophy: From Blank Egg to Mature Species
 
 ```text
        ┌──────────────────────────────────────────────────────────────┐
-       │   🥚 1. EGG (알 단계)                                        │
-       │   `harnemon incubate` (초경량 30토큰 부화 엔진만 탑재)        │
+       │   🥚 1. EGG (Incubation Stage)                               │
+       │   `harnemon incubate` (Lightweight 30-token engine only)     │
        └──────────────────────────────────────────────────────────────┘
                                        │
-                    2-Correction Loop  │  (피드백 및 코딩 컨벤션 흡수)
+                    2-Correction Loop  │  (Absorb feedback & conventions)
                                        ▼
        ┌──────────────────────────────────────────────────────────────┐
-       │   🌱 2. INCUBATING (성장 & EXP 축적)                          │
-       │   Rule/Skill/Hook 3기둥 자율 합성 및 부화도(%) 상승          │
+       │   🌱 2. INCUBATING (Growth & EXP Accumulation)                │
+       │   Synthesizes Rule/Skill/Hook pillars, raising Readiness (%) │
        └──────────────────────────────────────────────────────────────┘
                                        │
-                    harnemon hatch     │  (성체 명명 및 독립)
+                    harnemon hatch     │  (Name & graduate species)
                                        ▼
        ┌──────────────────────────────────────────────────────────────┐
-       │   🐣 3. HATCHED SPECIES (성체 탄생 & 도감 등재)              │
-       │   .harnemons/<species>/ ➔ 전역 하네덱스 배포 가능            │
+       │   🐣 3. HATCHED SPECIES (Registration & Adoption)            │
+       │   .harnemons/<species>/ ➔ Deployable across global Harnedex  │
        └──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🏛️ 1. 알(Egg)의 내부 구조
+## 🏛️ 1. Internal Structure of an Egg
 
-알은 학습 커널 두 개를 제외한 어떤 상시 규칙도 포함하지 않는 **제로 베이스 템플릿**입니다. 서식 규격이나 언어 규약, 작업 절차는 개발자의 교정을 통해 습득한 뒤에만 `rules/`로 승격됩니다:
+An Egg is a **zero-base template** containing only incubation kernels without pre-packaged conventions. Rules, language constraints, and workflows are promoted to `rules/` only after real-world developer feedback:
 
-- **상시 부화 감시 규칙 (`rules/incubation-kernel.md`)** — 사용자의 서식/도구 지시 및 2회 반복 교정을 실시간 포착
-- **자율 진화 규칙 (`rules/harness-evolution.md`)** — 2회 교정 시 3기둥(Rule, Skill, Hook)으로 승격하는 Hermes 루프 가동
-- **에피소드 로그 (`memory/episodes/YYYY-MM-DD.md`)** — 지적된 코딩 습관과 스택 특징, 컨벤션을 추가만 하며 쌓는 장부. `harnemon note`로 기록하며 과거 항목은 고쳐 쓰지 않음
+- **Incubation Kernel (`rules/incubation-kernel.md`)** — Real-time detection of user corrections and formatting preferences.
+- **Self-Evolution Rule (`rules/harness-evolution.md`)** — Promotes repeated feedback to Rules, Skills, or Hooks.
+- **Episodic Ledger (`memory/episodes/YYYY-MM-DD.md`)** — Append-only timeline of observations and conventions. Past entries are never modified.
 
 ---
 
-## ⚡ 2. 실전 사용 흐름
+## ⚡ 2. Operational Workflow
 
-### 1단계: 빈 알 상태로 인큐베이터 시작
-새 프로젝트나 기존 레포에서 빈 알을 품습니다:
+### Step 1: Incubate a Blank Egg
+Spawn an egg in a new or existing repository:
 ```bash
-# 현재 프로젝트에 빈 알 배치
 harnemon incubate
 ```
 
-### 2단계: 평소대로 페어 프로그래밍 진행
-에이전트와 대화하며 코딩을 진행합니다. 개발자가 지침을 내리거나 피드백을 주면 알이 그 자리에서 기록합니다:
+### Step 2: Pair Program Naturally
+Code and collaborate as usual. When giving feedback or setting project standards, record observations:
 ```bash
-harnemon note "배포 전 pnpm build로 타입 오류를 먼저 잡는다"
-harnemon note "axios 대신 내장 fetch를 사용한다" --type convention
+harnemon note "Run pnpm build before deploy to catch type errors"
+harnemon note "Use native fetch instead of axios" --type convention
 ```
-에피소드 로그는 추가만 하며 과거 항목을 고쳐 쓰지 않습니다. 같은 피드백이 2회 이상 쌓이면 3기둥으로 승격합니다.
+Entries are append-only. When the same feedback pattern repeats 2+ times, it graduates into the 3 pillars.
 
-부화도는 증거와 승격 결과를 함께 계산합니다. 에피소드는 최대 40%, 습득한 규칙이 40%, 습득한 스킬이 20%를 차지하므로 **기록만으로는 부화할 수 없습니다.**
+Hatch readiness is calculated from evidence and promotions (Episodes up to 40%, learned rules 40%, learned skills 20%). **Logging alone cannot hatch an egg without rule/skill graduation.**
 ```bash
 harnemon status
 ```
 
-### 3단계: 부화(Hatch) 및 새로운 종 탄생
-부화도가 60%에 도달하면 고유한 이름과 타입을 부여하여 공식 부화시킵니다:
+### Step 3: Hatch into a New Species
+Once readiness reaches 60%, assign a unique species name and element to officially hatch:
 ```bash
 harnemon hatch "Supabird" --type "Database ⚡" --desc "Supabase RLS & Edge Function Master"
 ```
-부화는 이 하네스에서 **기억을 증류하는 단 한 번의 사건**입니다. 쌓인 에피소드가 중복을 걷어낸 뒤 `memory/MEMORY.md`로 옮겨지고, 각 항목은 출처가 된 에피소드를 가리키는 꼬리표를 답니다. 에피소드 로그 자체는 그대로 보존되므로 언제든 증류 결과를 원본과 대조할 수 있습니다. 동시에 임시 부화 커널(`incubation-kernel.md`)이 제거되고 독립 하네몬 인스턴스로 승격됩니다.
+Hatching executes a **one-time distillation**: accumulated episodes are deduplicated into `memory/MEMORY.md` with source traceability tags (`<!-- id:m-0001 ... -->`). Raw episodes remain preserved as an audit trail. The temporary incubation kernel is removed and replaced with a mature Harnemon instance.
 
-부화도가 모자라면 부화가 거부됩니다. 축적 없이 태어난 하네몬은 빈 껍데기이기 때문입니다. 실험 목적이라면 `--force`로 넘길 수 있습니다.
-
-### 4단계: 기억 정비
-성체가 된 뒤에도 에피소드 로그는 그대로 열려 있습니다. `harnemon note`로 교정과 컨벤션을 계속 적재하고, `harnemon status`에서 누적된 증거를 확인합니다. 입양(`harnemon adopt`)으로 곧바로 성체를 받은 프로젝트도 동일한 장부를 갖추므로, 알을 거치지 않아도 기록이 끊기지 않습니다.
-
-시간이 지나면 기억이 낡거나 규칙과 중복되기 시작합니다. 정비는 명시적인 휴식으로 처리합니다:
+### Step 4: Memory Maintenance & Dreaming
+Mature species maintain open episodic logs. Regular grooming is handled via resting:
 ```bash
 harnemon rest
 ```
-아직 `MEMORY.md`가 없는 성체라면 이 시점에 쌓인 에피소드를 먼저 증류한 뒤 정비를 이어갑니다. 이 명령은 규칙으로 이미 승격된 항목, 같은 내용의 중복 항목, 오래도록 인용되지 않은 항목을 찾아 **제안서만 출력합니다.** 스스로 지우지 않는 이유는 기억을 반복해서 고쳐 쓰면 세부가 사라지고 없던 내용이 섞여 들어가기 때문입니다. 판단이 끝나면 `harnemon rest --apply`로 옮기고, 폐기된 항목은 사유와 함께 `memory/retired.md`에 남습니다.
+Identifies entries already promoted to rules, duplicate observations, or unreferenced claims. Run `harnemon rest --apply` to apply proposals; retired items are archived in `memory/retired.md`.
 
-기억을 실제로 활용했을 때는 `harnemon rest --cite m-0001`로 표시합니다. 이 인용 기록이 어떤 기억이 살아 있는지 판단하는 유일한 근거입니다.
+When referencing specific memories in work: `harnemon rest --cite m-0001`. Citation history serves as the primary metric for active memory relevance.
 
-### 5단계: 전역 하네덱스(Harnedex) 등록
-탄생한 하네몬을 전역 벨트에 등록하면, 다른 프로젝트에서도 언제든 입양할 수 있습니다:
+### Step 5: Global Harnedex Registration
+Registering the hatched species to the global belt enables immediate adoption across any repository:
 ```bash
 harnemon register
 ```
-이제 다른 디렉토리에서 아래 명령어로 즉시 분양받을 수 있습니다:
+Adopt the newly registered species in other workspaces:
 ```bash
 harnemon adopt supabird
 ```
 
 ---
 
-## 🔒 3. 인큐베이터 3대 불변식
+## 🔒 3. Incubator Invariants
 
-1. **상시 토큰 제로 부담** — 부화 중에도 상시 룰은 60토큰 미만으로 유지되어 코딩 성능을 저하시키지 않습니다.
-2. **엄격한 3기둥 분리** — 학습된 지식은 항상 상시 제약(`Rule`), 온디맨드 매뉴얼(`Skill`), 물리 게이트(`Hook`) 중 하나로 정밀 분류됩니다.
-3. **영구적 멱등성** — `incubate`, `hatch`, `register` 모든 과정이 순수 POSIX Bash로 멱등하게 실행됩니다.
+1. **Zero Prompt Bloat** — Always-on rules remain under 60 tokens during incubation to avoid degrading coding performance.
+2. **Strict 3-Pillar Separation** — Learned knowledge strictly categorizes into Always-on Rules, On-demand Skills, or Deterministic Gates.
+3. **Perpetual Idempotency** — `incubate`, `hatch`, and `register` operations execute idempotently via pure POSIX Bash.

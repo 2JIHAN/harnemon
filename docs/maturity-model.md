@@ -1,72 +1,72 @@
-# 하네스 발전 성숙도 모델 (Harness Maturity Model)
+# The 5-Stage Harness Maturity Model
 
-개발자와 조직이 AI 코딩 에이전트를 도입하고 통제하는 방식은 5단계의 성숙도를 거쳐 진화한다. 각 단계의 증상, 한계, 그리고 다음 단계로의 이행 경로를 정의한다.
+Defines the evolutionary stages through which developers and engineering organizations progress when adopting and governing AI coding agents. Specifies symptoms, bottlenecks, and graduation criteria for each level.
 
 ---
 
-## 1. 성숙도 단계 요약
+## 1. Maturity Stages Overview
 
 ```text
-[Level 0] 임의 프롬프트 (Ad-hoc Prompt)
+[Level 0] Ad-hoc Prompting
     ⬇
-[Level 1] 모놀리식 단일 파일 (Monolithic Prompt)
+[Level 1] Monolithic Prompt File
     ⬇
-[Level 2] 3대 기둥 분리 (Three Pillars Separation)
+[Level 2] Three Pillars Separation
     ⬇
-[Level 3] 라우터 및 물리 게이트 (Router & Physical Gates)
+[Level 3] Router & Deterministic Gates
     ⬇
-[Level 4] 메타 통제 하네스 (Meta-Governed Harness)
+[Level 4] Meta-Governed Autonomous Harness
 ```
 
 ---
 
-## 2. 단계별 세부 명세
+## 2. Detailed Level Specifications
 
-### Level 0: 임의 프롬프트 (Ad-hoc Prompt)
+### Level 0: Ad-hoc Prompting
 
-- **형태** — 대화창이 열릴 때마다 사용자가 기억에 의존해 요구사항, 코딩 스타일, 페르소나를 매번 손으로 입력하거나 메모장에서 복사해 붙여넣음
-- **주요 증상** — "아 맞다, 이번에도 테스트 먼저 짜라고 말 안 했네", 세션마다 코딩 컨벤션이 제각각으로 작성됨
-- **한계** — 재현 불가능, 협업 불가, 작업 일관성 전무
-- **탈출 조건** — 프로젝트 루트에 단일 설정 파일(`CLAUDE.md`, `.cursorrules`)을 만들고 공통 지침을 영속화
+- **State** — Every session begins from memory. Prompts, coding conventions, and persona instructions are repeatedly typed or copy-pasted manually.
+- **Symptoms** — Frequent omissions ("I forgot to tell it to write tests first"), inconsistent conventions across chat sessions.
+- **Bottlenecks** — Zero reproducibility, zero collaboration, lack of operational consistency.
+- **Graduation Criteria** — Create a persistent project root configuration (`CLAUDE.md`, `.cursorrules`).
 
-### Level 1: 모놀리식 단일 파일 (Monolithic Prompt)
+### Level 1: Monolithic Prompt File
 
-- **형태** — 저장소 루트의 단일 파일(`CLAUDE.md`, `.cursorrules`, `.windsurfrules`) 하나에 코딩 스타일, 배포 스크립트, DB 스키마, 페르소나, 예외 처리 규칙을 모두 기록
-- **주요 증상** — 파일 길이가 300~1,000줄로 비대화됨. "분명 규칙 파일에 써뒀는데 AI가 무시해요"라는 불만이 터져 나옴
-- **한계** — 상시 토큰 낭비, 주의력 분산(Attention Degradation), 긴급 핫픽스 시에도 불필요한 규칙 전체 적재
-- **탈출 조건** — 항상 켜둘 지침(Rule)과 필요할 때만 볼 매뉴얼(Skill), 스크립트로 막을 제약(Hook)으로 3분할
+- **State** — A single massive file (`CLAUDE.md`, `.cursorrules`, `.windsurfrules`) containing coding styles, deploy scripts, DB schemas, personas, and error handling.
+- **Symptoms** — File expands to 300–1,000 lines. Developers complain: "I wrote it in the rules file, but the AI ignores it."
+- **Bottlenecks** — Context window tax, attention degradation, irrelevant rules loaded during urgent hotfixes.
+- **Graduation Criteria** — Physically split into Always-on Rules (`rules/`), On-demand Manuals (`skills/`), and Enforced Gates (`hooks/`).
 
-### Level 2: 3대 기둥 분리 (Three Pillars Separation)
+### Level 2: Three Pillars Separation
 
-- **형태** — 상시 규칙(`rules/`), 온디맨드 스킬(`skills/`), Git 훅(`hooks/`)으로 폴더를 물리 분리하여 관심사 독립
-- **주요 증상** — 스킬이 생겼으나, 에이전트가 "스킬이 있는 줄 몰라서" 호출하지 않고 자기 마음대로 코드를 짜버리는 현상 발생
-- **한계** — 스킬 디스커버리(Discovery) 실패, 모델의 자의적 스킬 스킵
-- **탈출 조건** — 상시 규칙에 50토큰 미만의 경량 신호등을 두어 특정 작업 감지 시 스킬 호출을 강제하는 '스킬 라우터 패턴' 도입
+- **State** — Folders physically separated into rules, skills, and hooks.
+- **Symptoms** — Skills exist, but the agent fails to discover or read them, proceeding with arbitrary guesswork.
+- **Bottlenecks** — Skill discovery failure, model skipping specialized manuals.
+- **Graduation Criteria** — Introduce a lightweight (<50 tokens) Always-on Skill Router that mandates loading specific skills upon task context triggers.
 
-### Level 3: 라우터 및 물리 게이트 (Router & Physical Gates)
+### Level 3: Router & Deterministic Gates
 
-- **형태**
-  - **스킬 라우터 (Rule)** — 상시 규칙을 극단적으로 다이어트하고, "코딩 시 `ponytail` 로드", "버그 발생 시 `systematic-debugging` 로드" 지침만 주입
-  - **물리 하드 게이트 (Hook)** — 모델의 지능을 맹신하지 않고, 커밋 메시지 규칙 위반이나 린터 설정 약화 시도를 Git 훅이 물리적으로 `exit 1` 차단
-- **주요 증상** — 에이전트가 완벽한 규율 속에서 실수 없이 고품질 코드를 일관되게 생산함
-- **한계** — 하네스가 성숙해질수록 하네스 자체를 어떻게 팀원들과 공유하고, 어떻게 새로운 프로젝트에 멱등성 있게 배포하고 동기화할 것인가의 메타 관리 문제 봉착
-- **탈출 조건** — 하네스를 스캐폴딩하고, 하네스의 품질과 비대화를 지속 감사하는 '메타 하네스(Meta-Harness)' 도입
+- **State**
+  - **Skill Router (Rule)** — Minimal always-on dispatch table ("Load `ponytail` for coding", "Load `systematic-debugging` for bugs").
+  - **Hard Gates (Hook)** — Git pre-commit and pre-invocation hooks that fail fast (`exit 1`) upon secret staging or format violations.
+- **Symptoms** — Agent produces disciplined, verified, high-quality code consistently.
+- **Bottlenecks** — Scaling and syncing harnesses across multiple team repositories idempotently.
+- **Graduation Criteria** — Adopt a meta-governance CLI tool (`harnemon`) for scaffolding, memory distillation, and harness auditing.
 
-### Level 4: 메타 통제 하네스 (Meta-Governed Harness)
+### Level 4: Meta-Governed Autonomous Harness
 
-- **형태** — 하네스를 관리하기 위한 메타 도구(`harnemon`)를 통해 하네스를 규격화하고, 하네스 자체를 감사(`harnemon audit`)하며, 프로젝트 성격에 맞춰 템플릿별로 조립
-- **핵심 역량**
-  - **자가 진단** — 상시 규칙의 토큰 크기가 비대해지면 경고를 띄워 라우터로 분리 권장
-  - **불변식 보장** — 배포 스크립트의 멱등성(Idempotency), 자동 배선(Auto-wiring), 무의존성(Zero-dependency) 자동 검증
-  - **사례 기반 발전** — 생태계의 대표 하네스 아키텍처를 벤치마크하여 지속 진화
+- **State** — Governed by meta-tooling (`harnemon`) that scaffolds companions, audits harness health, tracks shortcut debt, and manages multi-party specialization.
+- **Core Capabilities**
+  - **Self-Evolution** — Autonomous episodic timeline logging, mid-session distillation to `MEMORY.md`, and 3-occurrence promotion to rules/skills.
+  - **System Invariants** — Guarantees idempotency, zero-dependency execution, and automated multi-provider wiring.
+  - **Multi-Party Specialization** — Coordinates multiple specialist Harnemons (Router, Debugger, Complexity Slasher) within a single workspace.
 
 ---
 
-## 3. 우리 팀/프로젝트의 자가 진단 매트릭스
+## 3. Self-Diagnosis Matrix
 
-| 질문 | 아니오 | 예 |
+| Question | No | Yes |
 | :--- | :--- | :--- |
-| 프로젝트마다 일관된 설정 파일이 Git으로 관리되고 있는가? | **Level 0** | Level 1 진입 |
-| 상시 프롬프트가 단일 파일이 아니라 Rule / Skill / Hook으로 분리되어 있는가? | **Level 1** | Level 2 진입 |
-| 모델이 스킬을 빼먹지 않도록 강제하는 라우터와 Git 하드 게이트가 있는가? | **Level 2** | Level 3 진입 |
-| 하네스 자체를 템플릿화하여 배포하고, 비대화를 감사하는 메타 도구가 있는가? | **Level 3** | **Level 4 도달** |
+| Are project configurations version-controlled in Git? | **Level 0** | Enter Level 1 |
+| Are always-on constraints separated from on-demand manuals and hard gates? | **Level 1** | Enter Level 2 |
+| Does an always-on skill router enforce reading manuals before coding/debugging? | **Level 2** | Enter Level 3 |
+| Is the harness autonomous, auditable, and managed via meta-tooling? | **Level 3** | **Level 4 (Mature)** |

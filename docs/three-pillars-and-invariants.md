@@ -1,12 +1,12 @@
-# 3대 기둥과 3대 불변식 설계론 (The 3 Pillars & 3 Invariants)
+# The 3 Pillars & 3 Invariants
 
-고성능 AI 하네스를 구축하기 위한 구조적 뼈대(3대 기둥)와 시스템이 영구히 지켜야 할 무결성 법칙(3대 불변식)을 규정한다.
+Specifies the structural taxonomy (3 Pillars) and perpetual integrity laws (3 Invariants) governing the Harnemon architecture.
 
 ---
 
-## 1. 하네스의 3대 기둥 (The 3 Pillars)
+## 1. The 3 Pillars
 
-하네스의 모든 지침과 코드는 반드시 다음 세 기둥 중 정확히 하나에 속해야 하며, 관심사를 혼용해서는 안 된다.
+Every instruction, script, and configuration in a harness must belong to exactly one of the three pillars without mixing concerns:
 
 ```text
        ┌─────────────────────────────────────────┐
@@ -14,46 +14,45 @@
        └─────────────────────────────────────────┘
             │                 │                 │
             ▼                 ▼                 ▼
-     [ 기둥 1: Rule ]  [ 기둥 2: Skill ] [ 기둥 3: Hook ]
-     (상시 인지 제약)   (온디맨드 역량)   (물리 하드 게이트)
+     [ Pillar 1: Rule ] [ Pillar 2: Skill ] [ Pillar 3: Hook ]
+     (Always-on Ability) (On-demand Move)   (Held Item Gate)
 ```
 
-### 기둥 1: Rule (상시 규칙)
-- **성격** — 매 대화 턴마다 컨텍스트에 자동 주입되어 상시 유지되어야 하는 최소한의 제약
-- **책임 범위** — 언어 표현 규약(`fluent-korean`), 시각 서식 규격(`terminal-response-format`), 작업 착수 및 실측 검증 절차(`task-execution-protocol`), 온디맨드 스킬 연결 신호등(`skill-routing`)
-- **설계 철학** — **극단적 미니멀리즘**. 상시 규칙이 수백 줄을 넘어가면 토큰 비용이 폭발하고 모델이 지침을 잊는다. 1개 파일당 50~100토큰 이내로 고밀도 유지.
+### Pillar 1: Rule (Always-on Cognitive Constraints)
+- **Nature** — Lightweight cognitive boundaries automatically transcluded into every conversational turn.
+- **Scope** — Visual output layout (`terminal-response-format`), task execution discipline (`task-execution-protocol`), and on-demand skill dispatchers (`skill-routing`).
+- **Design Standard** — **Extreme minimalism**. Rules exceeding hundreds of lines degrade attention and inflate token costs. Every rule file must remain dense and under 50–100 tokens.
 
-### 기둥 2: Skill (온디맨드 스킬)
-- **성격** — 특정 작업이 발생했을 때만 모델이 도구(`view_file`, `invoke_skill`)를 통해 명시적으로 읽어오는 구체적 작업 지침서
-- **책임 범위** — 복잡한 다단계 디버깅 방법론(`systematic-debugging`), 코드 다이어트 철학(`ponytail`), 문서 작성 가이드(`writing-docs`), 외부 브라우저 세션 제어(`delegate-to-aside`)
-- **설계 철학** — 100~500줄에 달하는 깊이 있는 지침과 예시를 자유롭게 담되, 상시 컨텍스트를 절대 오염시키지 않는다.
+### Pillar 2: Skill (On-demand Playbooks)
+- **Nature** — Detailed procedural execution manuals loaded dynamically via tools (`view_file`, `invoke_skill`) only when matching task contexts arise.
+- **Scope** — Root-cause debugging (`systematic-debugging`), complexity reduction (`ponytail`), technical writing standards (`writing-docs`), and browser GUI orchestration (`delegate-to-aside`).
+- **Design Standard** — Freely contains 100–500 lines of rigorous playbooks and examples without contaminating always-on context.
 
-### 기둥 3: Hook (물리 하드 게이트)
-- **성격** — 모델의 지능이나 양심을 믿지 않고, OS/Git 런타임 레벨에서 결정론적으로 위반을 차단하는 스크립트
-- **책임 범위** — 72자 초과 및 AI 서명 포함 커밋 차단(`commit-msg`), linter/formatter 설정 파일 약화 및 시크릿 커밋 차단(`pre-commit`)
-- **설계 철학** — 질적 판단(예: "코드가 깔끔한가?")은 훅으로 만들지 않는다. `exit 0` 또는 `exit 1`로 떨어지는 이진(Binary) 규칙만 엄격하게 물리 강제한다.
+### Pillar 3: Hook (Deterministic Binary Gates)
+- **Nature** — OS and Git lifecycle interceptors that enforce binary constraints without relying on probabilistic model compliance.
+- **Scope** — Pre-invocation transclusion dispatchers, pre-commit secret guards, and commit message format validators.
+- **Design Standard** — Strictly restricted to binary outcomes (`exit 0` or `exit 1`). Subjective qualitative evaluations must never be implemented as hooks.
 
 ---
 
-## 2. 하네스의 3대 불변식 (The 3 Invariants)
+## 2. The 3 System Invariants
 
-어떤 하네스를 설계하든 다음 3가지 시스템 불변식을 위반해서는 안 된다.
+Every Harnemon companion and workspace must uphold these three system invariants:
 
-### 불변식 1: 멱등성 (Idempotency)
-- **원칙** — 하네스 설치 및 업데이트 스크립트를 1번 실행하든 100번 실행하든 시스템의 최종 결과 상태는 동일해야 한다.
-- **구현 기준**
-  - 설정 파일에 지침을 추가할 때 중복 줄을 계속 덧붙이지 않고, 존재 여부를 체크한 뒤 배선한다.
-  - 심링크 생성 시 기존 링크를 안전하게 덮어쓰거나 갱신한다.
-  - 마크다운 설정 파일에 배선을 써 넣을 때는 `<!-- harnemon:<id>:begin v<버전> -->`부터 `<!-- harnemon:<id>:end -->`까지의 주석 표식으로 블록을 감싸고, 재생성 시 그 블록만 교체한다. 파일을 통째로 덮어쓰지 않으므로 사람이 직접 쓴 문단이 보존되고, 표식에 찍힌 버전으로 어느 릴리스가 생성한 블록인지 추적한다.
+### Invariant 1: Idempotency
+- **Principle** — Executing harness setup or update operations 1 time or 100 times must produce the exact same final deterministic state.
+- **Implementation**
+  - Configuration blocks are fenced by versioned markers: `<!-- harnemon:<id>:begin v<VERSION> -->` to `<!-- harnemon:<id>:end -->`. Regenerations replace only fenced blocks, preserving hand-written developer prose.
+  - Symlink creations and path resolutions safely overwrite or update existing targets.
 
-### 불변식 2: 자동 배선 (Auto-wiring)
-- **원칙** — 컴포넌트(Rule, Skill, Hook)를 추가하거나 설치했을 때, 개발자가 수동으로 여러 설정 파일을 찾아다니며 등록하는 과정을 없앤다.
-- **구현 기준**
-  - `rules/`에 새 마크다운을 넣고 설치기를 돌리면, 에이전트 루트 설정(`.agents/AGENTS.md`)의 `harnemon:rules` 블록에 자동으로 `@` 임포트가 연결된다. `hooks/`에 넣은 게이트는 같은 방식으로 `harnemon:hooks` 블록에 목록화된다.
-  - `skills/`에 새 스킬을 넣으면, Claude Code(`.claude/skills/`)와 Codex/Antigravity(`.agents/skills/`)가 단일 원본을 바라보도록 심링크가 자동 구성된다.
+### Invariant 2: Auto-wiring
+- **Principle** — Adding or modifying components (Rules, Skills, Memory) must never require manual multi-file registration.
+- **Implementation**
+  - Placing rules or skills automatically wires imports into `.agents/AGENTS.md` and generates aggregated symlinks under `.agents/skills/`.
+  - Platforms (Antigravity, Claude Code, Cursor, Codex) automatically discover the unified harness without fragmented configurations.
 
-### 불변식 3: 무의존성 (Zero-dependency)
-- **원칙** — 하네스 자체를 구동하기 위해 수십 개의 무거운 외부 패키지나 특정 런타임(Node.js 등)을 강제하지 않는다.
-- **구현 기준**
-  - 모든 하네스 설치기와 훅은 macOS와 Linux의 기본 쉘(`bash`, `sh`)과 표준 도구(`git`, `grep`, `sed`)만으로 완결된다.
-  - 개발자의 로컬 환경이 Node든 Python이든 Go든 관계없이 10ms 이내에 즉각 동작한다.
+### Invariant 3: Zero-dependency
+- **Principle** — Harness operation must not impose heavy external runtimes or package manager overhead.
+- **Implementation**
+  - Core CLI tools and dispatchers execute instantly across macOS and Linux using POSIX shell and standard utilities (`git`, `grep`, `sed`).
+  - Operates in under 10ms regardless of the target project's tech stack (Node, Python, Go, Rust).

@@ -1,4 +1,4 @@
-# reactyl Semantic Knowledge Catalog (INDEX.md)
+# Reactyl Semantic Knowledge Catalog (INDEX.md)
 
 | Topic | Domain / Scope | Location |
 | :--- | :--- | :--- |

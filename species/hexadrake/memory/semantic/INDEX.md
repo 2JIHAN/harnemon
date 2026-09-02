@@ -1,4 +1,4 @@
-# hexadrake Semantic Knowledge Catalog (INDEX.md)
+# Hexadrake Semantic Knowledge Catalog (INDEX.md)
 
 | Topic | Domain / Scope | Location |
 | :--- | :--- | :--- |

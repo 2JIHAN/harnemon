@@ -1,4 +1,4 @@
-# pixiel Semantic Knowledge Catalog (INDEX.md)
+# Pixiel Semantic Knowledge Catalog (INDEX.md)
 
 | Topic | Domain / Scope | Location |
 | :--- | :--- | :--- |

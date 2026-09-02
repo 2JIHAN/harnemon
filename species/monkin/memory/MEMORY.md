@@ -1,3 +1,3 @@
 # Monkin Distilled Memory (MEMORY.md)
 
-Distilled observations, corrections, and learned conventions for Monkin.
+Distilled observations, corrections, and learned conventions.

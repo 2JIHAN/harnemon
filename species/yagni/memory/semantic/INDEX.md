@@ -1,4 +1,4 @@
-# yagni Semantic Knowledge Catalog (INDEX.md)
+# Yagni Semantic Knowledge Catalog (INDEX.md)
 
 | Topic | Domain / Scope | Location |
 | :--- | :--- | :--- |

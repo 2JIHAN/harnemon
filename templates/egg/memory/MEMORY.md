@@ -1,3 +1,3 @@
-# egg Distilled Memory (MEMORY.md)
+# Egg Distilled Memory (MEMORY.md)
 
 Distilled observations, corrections, and learned conventions.

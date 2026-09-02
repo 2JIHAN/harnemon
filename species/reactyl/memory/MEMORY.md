@@ -1,3 +1,3 @@
-# reactyl Distilled Memory (MEMORY.md)
+# Reactyl Distilled Memory (MEMORY.md)
 
 Distilled observations, corrections, and learned conventions.

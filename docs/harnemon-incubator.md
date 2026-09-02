@@ -34,7 +34,7 @@ Defines the incubation mechanics of starting from a **Blank Egg 🥚** with zero
 An Egg is a **zero-base template** containing only incubation kernels without pre-packaged conventions. Rules, language constraints, and workflows are promoted to `rules/` only after real-world developer feedback:
 
 - **Incubation Kernel (`rules/incubation-kernel.md`)** — Real-time detection of user corrections and formatting preferences.
-- **Self-Evolution Rule (`rules/harness-evolution.md`)** — Promotes repeated feedback to Rules, Skills, or Hooks.
+- **Self-Evolution Rule (`rules/self-learning.md`)** — Promotes repeated feedback to Rules, Skills, or Hooks.
 - **Episodic Ledger (`memory/episodes/YYYY-MM-DD.md`)** — Append-only timeline of observations and conventions. Past entries are never modified.
 
 ---

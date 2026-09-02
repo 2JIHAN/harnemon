@@ -18,9 +18,9 @@
 
 `species/pixiel`, `species/reactyl`, `species/hexadrake` 세 폴더를 생성했다. 사용자 요청에 따라 `templates/egg` 스캐폴드를 쓰지 않고, 기존 종인 `nimbleet`에서 공용 자산을 그대로 불러왔다.
 
-- **공용 규칙 5개** — `fluent-korean`, `harness-evolution`, `skill-routing`, `task-execution-protocol`, `terminal-response-format`
+- **공용 규칙 5개** — `fluent-korean`, `self-learning`, `skill-routing`, `task-execution-protocol`, `terminal-response-format`
 - **훅 3개** — `commit-msg`, `pre-commit`, `install.sh`
-- **공용 스킬 1개** — `harness-evolution/SKILL.md`
+- **공용 스킬 1개** — `self-learning/SKILL.md`
 
 ### 2.2 종별 고유 상시 규칙
 
@@ -92,7 +92,7 @@
 
 ## 5. 알려진 미해결 사항
 
-- **프로젝트 사본의 명령어가 낡았다** — `~/general-ai/.harnemons/` 아래 세 종(`nimbleet`, `monkin`, `yagni`)의 `harness-evolution.md`와 `skill-routing.md`와 `harness-evolution/SKILL.md`가 존재하지 않는 `mhm audit` 명령을 지시한다. 글로벌 벨트에는 이미 `harnemon audit`으로 고쳐져 있으므로 `harnemon update`로 동기화하거나 해당 파일을 직접 고치면 된다.
+- **프로젝트 사본의 명령어가 낡았다** — `~/general-ai/.harnemons/` 아래 세 종(`nimbleet`, `monkin`, `yagni`)의 `self-learning.md`와 `skill-routing.md`와 `self-learning/SKILL.md`가 존재하지 않는 `mhm audit` 명령을 지시한다. 글로벌 벨트에는 이미 `harnemon audit`으로 고쳐져 있으므로 `harnemon update`로 동기화하거나 해당 파일을 직접 고치면 된다.
 - **CLI 수정이 커밋되지 않았다** — `bin/harnemon`의 수정 3건과 신규 종 3개는 작업 트리에만 있다. 원본은 필요하면 git으로 되돌릴 수 있다.
 - **워크플로 종합 단계가 미완이다** — 조사와 검증은 끝났으나 종별 하네스 설계 종합과 완결성 비평 단계는 실행되지 않았다. 4번 항목의 스킬과 훅 작성은 조사 자료를 직접 읽어 진행하는 편이 재실행보다 저렴하다.
 

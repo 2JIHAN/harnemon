@@ -1,9 +1,9 @@
 ---
-name: harness-evolution
-description: Continuous self-evolution directive for AI agents. Governs autonomous episodic logging, in-session distillation, semantic knowledge extraction, write routing decision trees, and 3-occurrence promotion.
+name: self-learning
+description: Continuous self-learning protocol for AI agents. Governs autonomous episodic logging, in-session distillation, semantic knowledge extraction, write routing decision trees, and 3-occurrence promotion.
 ---
 
-# Harness Self-Evolution Protocol (harness-evolution.md)
+# Self-Learning Protocol (self-learning.md)
 
 You must never passively consume your harness (Rules, Skills, Memory). You are actively responsible for **autonomously logging, distilling, and evolving your own harness** based on observations, conventions, and user feedback throughout active sessions.
 

@@ -33,6 +33,7 @@ When encountering new information, user corrections, or domain discoveries durin
    - **No** ➔ Keep in `memory/semantic/<topic>.md` (retrieved on-demand only).
 
 5. **Has a convention, constraint, or playbook repeated 3+ times?**
+   - **Semantic Invariance**: Promotion requires repeated occurrence of the underlying invariant, problem definition, and remedy pattern—never byte-for-byte or literal full-text string equality. Synthesize varying episodic phrasings into a canonical principle before promoting.
    - **Constraints (<50 lines)** ➔ Promote to `rules/<name>.md`.
    - **Playbooks (>50 lines)** ➔ Promote to `skills/<name>/SKILL.md` + register in `skills/INDEX.md`.
    - **Retire**: Prune promoted items from `MEMORY.md` into `memory/retired.md`.
@@ -78,9 +79,9 @@ When encountering new information, user corrections, or domain discoveries durin
 - **Distillation Timing**: Immediately after writing new episodic entries or completing a milestone.
 - **Target File**: `memory/MEMORY.md` (L1 Resident Memory).
 - **Rules**:
-  - Extract repeating patterns, architecture decisions, and conventions from daily episodes, merging duplicate points.
-  - Retain source traceability tags (`<!-- id:m-0001 born:YYYY-MM-DD src:episodes/... -->`) on every distilled item.
-  - Strictly maintain file length **under 100 lines** to prevent prompt bloat.
+  - **Pattern Extraction over Literal Matching**: Extract repeating patterns, architecture decisions, and conventions from daily episodes, merging duplicate points. Deduplication and distillation must never require byte-for-byte full-text matching; synthesize varying natural-language observations into a single dense invariant.
+  - **Traceability**: Retain source traceability tags (`<!-- id:m-0001 born:YYYY-MM-DD src:episodes/... -->`) on every distilled item.
+  - **Strict Budget**: Strictly maintain file length **under 100 lines** to prevent prompt bloat.
 
 ## 5. Zero-Fluff Discipline & Integrity
 

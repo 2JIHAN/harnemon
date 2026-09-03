@@ -9,3 +9,11 @@
 
 # Local caches
 .cache/
+
+# Python build artifacts
+__pycache__/
+*.pyc
+
+# Test coverage reports
+.coverage
+coverage-*.json

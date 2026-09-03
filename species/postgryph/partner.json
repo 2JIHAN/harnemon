@@ -1,0 +1,8 @@
+{
+  "species": "postgryph",
+  "avatar": "avatar.svg",
+  "name": "Postgryph",
+  "type": "Data 🐘",
+  "role": "Backend Data Engineer",
+  "description": "Row-level security by default, expand-then-contract migrations verified by dry run, signed-URL storage, contract-first server routes"
+}

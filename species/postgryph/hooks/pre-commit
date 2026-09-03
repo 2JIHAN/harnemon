@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# species/postgryph/hooks/pre-commit
+# Physical commit gate for Postgryph [Data 🐘]
+# Enforces:
+# 1. RLS Enforcement (Tables in SQL migrations must have Row Level Security enabled)
+# 2. Secret & Credential Leak Guard (Blocks .env, service_role keys, cloud tokens, private keys)
+set -euo pipefail
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  AGAINST="HEAD"
+else
+  AGAINST="$(git hash-object -t tree /dev/null)"
+fi
+
+FAILED=0
+
+# 1. Secret Guard by Filename
+SECRET_FILE_PATTERNS=(
+  "^\.env$"
+  "^\.env\..*$"
+  ".*\.pem$"
+  ".*\.key$"
+  ".*id_rsa$"
+  ".*id_ed25519$"
+)
+
+while IFS=$'\t' read -r status filepath extra; do
+  [ -z "$filepath" ] && continue
+  filename="$(basename "$filepath")"
+  for pat in "${SECRET_FILE_PATTERNS[@]}"; do
+    if [[ "$filename" =~ $pat ]]; then
+      echo "❌ [Postgryph Gate] Staging secret credential file '$filepath' is strictly blocked."
+      echo "   Secrets must never enter version control. Add it to .gitignore and unstage."
+      FAILED=1
+    fi
+  done
+done < <(git diff --cached --name-status "$AGAINST")
+
+# 2. Secret Guard by Content (Scans all staged additions)
+STAGED_ALL_FILES=$(git diff --cached --name-only --diff-filter=ACM "$AGAINST" || true)
+
+if [ -n "$STAGED_ALL_FILES" ]; then
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    ADDITIONS=$(git diff --cached -U0 "$AGAINST" -- "$file" | grep '^+[^+]' || true)
+    [ -z "$ADDITIONS" ] && continue
+
+    # A. Supabase service_role key leak
+    if echo "$ADDITIONS" | grep -Ei 'service_role.*eyJ|SUPABASE_SERVICE_ROLE_KEY\s*=\s*['\''"]?eyJ' >/dev/null 2>&1; then
+      echo "❌ [Postgryph Gate] Supabase service_role secret key detected in '$file'!"
+      echo "   service_role bypasses all RLS policies and must never be committed."
+      FAILED=1
+    fi
+
+    # B. Private Key Blocks
+    if echo "$ADDITIONS" | grep -Eq '-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----' >/dev/null 2>&1; then
+      echo "❌ [Postgryph Gate] Private cryptographic key block detected in '$file'!"
+      FAILED=1
+    fi
+
+    # C. Cloud & AI API Tokens
+    if echo "$ADDITIONS" | grep -Eq '(sk-proj-[A-Za-z0-9_-]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36})' >/dev/null 2>&1; then
+      echo "❌ [Postgryph Gate] Hardcoded secret API key / access token detected in '$file'!"
+      FAILED=1
+    fi
+
+    # D. Database connection string with raw credentials
+    if echo "$ADDITIONS" | grep -Eiq '(postgres|postgresql|mysql)://[^:]+:[^@\s]+@' >/dev/null 2>&1; then
+      echo "❌ [Postgryph Gate] Database connection URI with hardcoded password detected in '$file'!"
+      FAILED=1
+    fi
+  done <<< "$STAGED_ALL_FILES"
+fi
+
+# 3. Row-Level Security (RLS) Gate on Staged SQL Migrations
+STAGED_SQL_FILES=$(git diff --cached --name-only --diff-filter=ACM "$AGAINST" | grep -Ei '\.sql$' || true)
+
+if [ -n "$STAGED_SQL_FILES" ]; then
+  while IFS= read -r sql_file; do
+    [ -z "$sql_file" ] && continue
+    # Extract table names from staged CREATE TABLE statements
+    ADDITIONS=$(git diff --cached -U0 "$AGAINST" -- "$sql_file" | grep '^+[^+]' || true)
+    [ -z "$ADDITIONS" ] && continue
+
+    # Find created tables in additions
+    TABLE_NAMES=$(echo "$ADDITIONS" | grep -Eoi 'CREATE[[:space:]]+TABLE[[:space:]]+(IF[[:space:]]+NOT[[:space:]]+EXISTS[[:space:]]+)?([a-zA-Z0-9_\.\"]+)' | awk '{print $NF}' | tr -d '";' || true)
+
+    if [ -n "$TABLE_NAMES" ]; then
+      # Check entire file for ENABLE ROW LEVEL SECURITY
+      FULL_CONTENT=$(cat "$sql_file" 2>/dev/null || true)
+      for tbl in $TABLE_NAMES; do
+        # Extract base table name without schema prefix if present
+        base_tbl="${tbl##*.}"
+        if ! echo "$FULL_CONTENT" | grep -Eiq "ALTER[[:space:]]+TABLE[[:space:]]+([^[:space:]]+\.)?\"?${base_tbl}\"?[[:space:]]+ENABLE[[:space:]]+ROW[[:space:]]+LEVEL[[:space:]]+SECURITY"; then
+          echo "❌ [Postgryph Gate] Table '$tbl' in '$sql_file' lacks Row-Level Security (RLS)!"
+          echo "   Postgres/Supabase rule: Every user-facing table must execute:"
+          echo "   ALTER TABLE $tbl ENABLE ROW LEVEL SECURITY;"
+          FAILED=1
+        fi
+      done
+    fi
+  done <<< "$STAGED_SQL_FILES"
+fi
+
+if [ "$FAILED" -ne 0 ]; then
+  echo ""
+  echo "🚫 Postgryph pre-commit gate failed. Resolve security and RLS violations before committing."
+  exit 1
+fi
+
+exit 0

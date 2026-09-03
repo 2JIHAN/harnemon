@@ -61,9 +61,9 @@ Traditional AI harnesses either copy-paste monolithic prompt blobs across reposi
 
 ---
 
-## 📖 Harnedex — The 4 Legendary Gen-1 Archetypes
+## 📖 Harnedex — Legendary Archetypes & Specialized Species
 
-Harnemon comes equipped with 4 archetypal species inspired by classic Gen-1 Pokémon starters:
+Harnemon comes equipped with archetypal species inspired by classic Gen-1 Pokémon starters and specialized production companions:
 
 | No. | Species | Gen-1 Type | Real-World Origin | Signature Trait & Core Moves |
 | :---: | :--- | :--- | :--- | :--- |
@@ -72,6 +72,8 @@ Harnemon comes equipped with 4 archetypal species inspired by classic Gen-1 Pok�
 | **No.002** | **[Fortoise](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **Trait: Config-Guard Shell**<br>A colossal fortress of 288 moves. Hard-blocks any sneaky attempt by AI to weaken linter/formatter rules. |
 | **No.003** | **[Monkin](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **Trait: The Iron Law Crucible**<br>Practitioner of *The Iron Law*. Burns away guesswork; strictly forbids touching code until root causes are proven. |
 | **No.004** | **[Yagni](docs/case-studies/04-dietrich-ponytail.md)** | `Grass 🍃` | `DietrichGebert/ponytail` | **Trait: Ladder of Laziness**<br>The genius slacker who prunes bloat. Slashes speculative code (`-N lines`), prefers stdlib, and harvests debt. |
+| **No.005** | **[Pixwing](species/pixwing/README.md)** | `Fairy ✨` | `Pixiel + Reactyl Fusion` | **Trait: Design-to-Ship Wing**<br>Token-first screens shipped end to end: 12-step color scale, WCAG 2.2 gates, feature-sliced components, server/client boundary discipline. |
+| **No.006** | **[Postgryph](species/postgryph/README.md)** | `Data 🐘` | `Hexadrake + Supabase Fusion` | **Trait: Row-Level Guardian**<br>Row-level security by default, expand-then-contract migrations verified by dry run, signed-URL storage, contract-first server routes. |
 
 ---
 

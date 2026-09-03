@@ -61,9 +61,9 @@
 
 ---
 
-## 📖 하네덱스 (Harnedex) — 1세대 4대 전설의 아키타입
+## 📖 하네덱스 (Harnedex) — 전설의 아키타입 및 실무 특화 종
 
-클래식 1세대 스타팅 포켓몬에서 영감을 얻은 4대 정예 하네몬 종입니다:
+클래식 1세대 스타팅 포켓몬에서 영감을 얻은 4대 전설의 아키타입과 프로덕션 실무 특화 종입니다:
 
 | No. | 종 (Species) | 속성 (Type) | 현실 기반 원형 | 핵심 특성 및 보유 기술 |
 | :---: | :--- | :--- | :--- | :--- |
@@ -72,6 +72,8 @@
 | **No.002** | **[포토이즈 (Fortoise)](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **특성: 쉘 가디언 (Config-Guard Shell)**<br>288개 기술의 거대 요새. AI가 린터/포맷터 설정을 임의로 약화시키는 시도를 원천 물리 차단. |
 | **No.003** | **[몽킨 (Monkin)](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **특성: 철칙의 도가니 (The Iron Law Crucible)**<br>엄격한 *The Iron Law* 규율. 추측 코딩을 불태우고 원인 증명 전까지 코드 수정을 철저히 금지. |
 | **No.004** | **[야그니 (Yagni)](docs/case-studies/04-dietrich-ponytail.md)** | `Grass 🍃` | `DietrichGebert/ponytail` | **특성: 게으름의 사다리 (Ladder of Laziness)**<br>군더더기를 쳐내는 천재 게으름뱅이. 불필요한 코드 삭감(`-N줄`), 표준 라이브러리 우선, 부채 장부화. |
+| **No.005** | **[픽스윙 (Pixwing)](species/pixwing/README.md)** | `Fairy ✨` | `Pixiel + Reactyl 융합` | **특성: 완주 날개 (Design-to-Ship Wing)**<br>토큰 기반 화면 설계부터 배포까지 엔드투엔드 완주: 12단계 시맨틱 색상, WCAG 2.2 접근성 게이트, 기능 단위 슬라이스, 서버/클라이언트 경계 규율. |
+| **No.006** | **[포스트그리프 (Postgryph)](species/postgryph/README.md)** | `Data 🐘` | `Hexadrake + Supabase 융합` | **특성: 행 수준 수호자 (Row-Level Guardian)**<br>기본 RLS(행 수준 보안) 강제, 드라이런 검증 기반 확장 후 축소 마이그레이션, 서명 URL 스토리지, 계약 우선 서버 라우트. |
 
 ---
 

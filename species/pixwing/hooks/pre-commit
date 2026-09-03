@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# species/pixwing/hooks/pre-commit
+# Physical commit gate for Pixwing [Fairy ✨]
+# Enforces:
+# 1. Accessibility Gates (WCAG 2.2: img alt, button type, div onClick, outline:none, overflow-x:hidden)
+# 2. Design Token & Typography Gates (Pure #000/#fff ban, banned generic fonts, 4pt grid breaks)
+set -euo pipefail
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  AGAINST="HEAD"
+else
+  AGAINST="$(git hash-object -t tree /dev/null)"
+fi
+
+# Filter staged frontend and stylesheet files
+STAGED_UI_FILES=$(git diff --cached --name-only --diff-filter=ACM "$AGAINST" | grep -Ei '\.(tsx|jsx|html|vue|svelte|css|scss)$' || true)
+
+if [ -z "$STAGED_UI_FILES" ]; then
+  exit 0
+fi
+
+FAILED=0
+
+# Iterate through staged files
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+
+  # Get only added lines in the staged diff
+  ADDITIONS=$(git diff --cached -U0 "$AGAINST" -- "$file" | grep '^+[^+]' || true)
+  [ -z "$ADDITIONS" ] && continue
+
+  # 1. Accessibility Gates (WCAG 2.2)
+  # A. Missing alt in img tags
+  if echo "$ADDITIONS" | grep -Ei '<(img|Image)\b' | grep -Eiv '\balt=' >/dev/null 2>&1; then
+    echo "❌ [Pixwing Gate] Missing 'alt' attribute in '$file'"
+    echo "   WCAG 2.2 requires every image to have an alt attribute (empty alt=\"\" for decorative images)."
+    FAILED=1
+  fi
+
+  # B. <button> without type attribute
+  if echo "$ADDITIONS" | grep -Ei '<button\b' | grep -Eiv '\btype=' >/dev/null 2>&1; then
+    echo "❌ [Pixwing Gate] <button> without explicit 'type' attribute in '$file'"
+    echo "   Always specify type=\"button\", type=\"submit\", or type=\"reset\" to avoid accidental form submissions."
+    FAILED=1
+  fi
+
+  # C. Div or span with onClick (Semantics Before ARIA)
+  if echo "$ADDITIONS" | grep -Ei '<(div|span)\b[^>]*\bonClick\b' >/dev/null 2>&1; then
+    echo "❌ [Pixwing Gate] Interactive <div/span onClick> detected in '$file'"
+    echo "   A <div> or <span> with onClick is a defect. Use native <button> or <a> with semantic HTML."
+    FAILED=1
+  fi
+
+  # D. outline: none or outline: 0 without visible replacement
+  if echo "$ADDITIONS" | grep -Eiq 'outline:\s*(none|0)' >/dev/null 2>&1; then
+    echo "❌ [Pixwing Gate] 'outline: none' or 'outline: 0' detected in '$file'"
+    echo "   WCAG 2.4.7 / 2.4.11: Every interactive element must have a visible focus indicator."
+    FAILED=1
+  fi
+
+  # E. overflow-x: hidden instead of clip
+  if echo "$ADDITIONS" | grep -Eq 'overflow-x:\s*hidden' >/dev/null 2>&1; then
+    echo "❌ [Pixwing Gate] 'overflow-x: hidden' detected in '$file'"
+    echo "   Use 'overflow-x: clip' instead of 'hidden' (clip preserves sticky and fixed descendants)."
+    FAILED=1
+  fi
+
+  # 2. Design Token & Typography Gates
+  # A. Pure #000 or #fff ban (Radix Colors / Perceptually uniform design)
+  if echo "$ADDITIONS" | grep -Eiq '#(000|fff)([0-9a-fA-F]{3})?([^0-9a-fA-F]|$)' >/dev/null 2>&1; then
+    # Exclude theme definition or config files if explicitly named tokens
+    if [[ ! "$file" =~ (tokens|theme|colors)\.(ts|js|json|css) ]]; then
+      echo "❌ [Pixwing Gate] Pure #000 or #fff detected in '$file'"
+      echo "   Pure #000 and #fff are banned. Tint toward anchor hue or use semantic surface/text tokens."
+      FAILED=1
+    fi
+  fi
+
+  # B. Banned generic typefaces
+  if echo "$ADDITIONS" | grep -Eiq 'font-family:[^;]*(Inter|Roboto|Open Sans|Lato|Poppins)|fonts\.googleapis\.com/[^"'\''\s]*family=(Inter|Roboto|Open\+Sans|Lato|Poppins)' >/dev/null 2>&1; then
+    echo "❌ [Pixwing Gate] Banned generic typeface detected in '$file'"
+    echo "   Defaulting to Inter/Roboto/Open Sans/Lato/Poppins is banned. Pair a distinct display face with an approved body face."
+    FAILED=1
+  fi
+
+  # C. Spacing scale violation (arbitrary pixel values breaking 4pt grid in Tailwind classes)
+  if echo "$ADDITIONS" | grep -Eq '([pmgwh]|gap|top|bottom|left|right)-\[[0-9]+px\]' >/dev/null 2>&1; then
+    BAD_SPACING=$(echo "$ADDITIONS" | grep -Eo '([pmgwh]|gap|top|bottom|left|right)-\[[0-9]+px\]' | while read -r match; do
+      num=$(echo "$match" | grep -Eo '[0-9]+')
+      if [ -n "$num" ] && [ $((num % 4)) -ne 0 ]; then
+        echo "$match"
+      fi
+    done)
+    if [ -n "$BAD_SPACING" ]; then
+      echo "❌ [Pixwing Gate] 4pt base grid violation in '$file': $BAD_SPACING"
+      echo "   Every dimension and spacing value must be a multiple of 4px."
+      FAILED=1
+    fi
+  fi
+
+done <<< "$STAGED_UI_FILES"
+
+if [ "$FAILED" -ne 0 ]; then
+  echo ""
+  echo "🚫 Pixwing pre-commit gate failed. Fix the issues above before committing."
+  exit 1
+fi
+
+exit 0

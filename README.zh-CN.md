@@ -61,7 +61,7 @@
 
 ---
 
-## 📖 Harnedex (宝可梦图鉴) — 第1代四大传奇原型
+## 📖 Harnedex (宝可梦图鉴) — 传奇原型与实战特化物种
 
 | 编号 | 物种 (Species) | 属性 (Type) | 现实来源原型 | 核心特性与招式 |
 | :---: | :--- | :--- | :--- | :--- |
@@ -70,6 +70,8 @@
 | **No.002** | **[Fortoise (铠甲龟)](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **特性: 配置守卫甲壳**<br>拥有 288 项技能的庞大堡垒。物理拦截任何 AI 擅自放宽 linter/formatter 规则的企图。 |
 | **No.003** | **[Monkin (铁律猴)](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **特性: 铁律熔炉 (The Iron Law)**<br>燃烧猜想；在证明根本原因之前，绝对禁止修改代码。 |
 | **No.004** | **[Yagni (懒惰草)](docs/case-studies/04-dietrich-ponytail.md)** | `Grass 🍃` | `DietrichGebert/ponytail` | **特性: 懒惰之梯 (Ladder of Laziness)**<br>修剪冗余的天才懒汉。大刀阔斧削减投机代码 (`-N行`)，标准库优先。 |
+| **No.005** | **[Pixwing (像素翼)](species/pixwing/README.md)** | `Fairy ✨` | `Pixiel + Reactyl 融合` | **特性: 设计至交付之翼 (Design-to-Ship Wing)**<br>从设计令牌到落地代码的全链路交付: 12阶语义颜色、WCAG 2.2无障碍门禁、切片架构、服务端/客户端边界纪律。 |
+| **No.006** | **[Postgryph (数据狮鹫)](species/postgryph/README.md)** | `Data 🐘` | `Hexadrake + Supabase 融合` | **特性: 行级守护兽 (Row-Level Guardian)**<br>默认强制行级安全性 (RLS)、经 Dry Run 验证的先扩后缩迁移、签名 URL 存储、契约优先服务端路由。 |
 
 ---
 

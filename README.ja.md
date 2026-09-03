@@ -61,7 +61,7 @@
 
 ---
 
-## 📖 ハーネデックス (Harnedex) — 第1世代の伝説の4大アーキタイプ
+## 📖 ハーネデックス (Harnedex) — 伝説のアーキタイプ ＆ 実務特化種
 
 | No. | 種 (Species) | タイプ (Type) | モデル元 | 特徴 ＆ 主要技 |
 | :---: | :--- | :--- | :--- | :--- |
@@ -70,6 +70,8 @@
 | **No.002** | **[Fortoise (フォートイス)](docs/case-studies/02-everything-claude-code.md)** | `Water 💧` | `affaan-m/everything-claude-code` | **特性: コンフィグガードシェル**<br>288個の技を持つ巨大要塞。AIがリント設定を勝手に弱める試みを物理的に完全ブロック。 |
 | **No.003** | **[Monkin (モンキン)](docs/case-studies/03-obra-superpowers.md)** | `Fire 🔥` | `obra/superpowers` | **特性: 鉄則のるつぼ (The Iron Law)**<br>当て推量のコーディングを焼き払い、根本原因が証明されるまでコードの変更を厳禁。 |
 | **No.004** | **[Yagni (ヤグニ)](docs/case-studies/04-dietrich-ponytail.md)** | `Grass 🍃` | `DietrichGebert/ponytail` | **特性: 怠惰のはしご (Ladder of Laziness)**<br>無駄を削ぎ落とす天才的怠け者。投機的コードを削減(`-N行`)し、標準ライブラリを最優先。 |
+| **No.005** | **[Pixwing (ピクスウィング)](species/pixwing/README.md)** | `Fairy ✨` | `Pixiel + Reactyl 融合` | **特性: デザイン完走の翼 (Design-to-Ship Wing)**<br>トークン駆動の画面設計から実装までを一気通貫: 12段階セマンティックカラー、WCAG 2.2品質ゲート、フィーチャースライス構造、サーバー/クライアント境界規律。 |
+| **No.006** | **[Postgryph (ポストグリフ)](species/postgryph/README.md)** | `Data 🐘` | `Hexadrake + Supabase 融合` | **特性: 行レベルの守護獣 (Row-Level Guardian)**<br>RLS(行単位セキュリティ)の常時適用、ドライラン検証による拡張後縮小マイグレーション、署名付きURLストレージ、契約ファーストのAPIルート。 |
 
 ---
 

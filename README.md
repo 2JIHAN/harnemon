@@ -94,7 +94,7 @@ Every Harnemon’s anatomy is built upon 3 orthogonal engineering pillars rather
 ```
 
 1. **Abilities (`rules/`)**: Minimal cognitive guardrails loaded into every turn (`fluent-korean`, `task-execution-protocol`, `skill-routing`).
-2. **Moves (`skills/`)**: On-demand specialized playbooks loaded only when triggered (`ponytail`, `systematic-debugging`, `writing-docs`).
+2. **Moves (`skills/`)**: On-demand specialized playbooks loaded only when triggered (`ponytail`, `systematic-debugging`, `writing-docs-in-korean`).
 3. **Held Items (`hooks/`)**: Deterministic Git pre-commit and commit-msg gates that reject bad commits with physical exit codes (`commit-msg`, `pre-commit`).
 
 ---

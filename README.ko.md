@@ -94,7 +94,7 @@
 ```
 
 1. **상시 특성 (`rules/`)**: 매 대화 턴마다 주입되는 최소한의 제약 (`fluent-korean`, `task-execution-protocol`, `skill-routing`).
-2. **보유 기술 (`skills/`)**: 특정 작업이 발생했을 때만 모델이 온디맨드로 로드하는 실전 매뉴얼 (`ponytail`, `systematic-debugging`, `writing-docs`).
+2. **보유 기술 (`skills/`)**: 특정 작업이 발생했을 때만 모델이 온디맨드로 로드하는 실전 매뉴얼 (`ponytail`, `systematic-debugging`, `writing-docs-in-korean`).
 3. **장착 도구 (`hooks/`)**: 모델의 자의적 판단을 믿지 않고, OS/Git 런타임에서 결정론적으로 위반을 차단하는 스크립트 (`commit-msg`, `pre-commit`).
 
 ---

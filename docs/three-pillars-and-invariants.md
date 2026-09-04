@@ -25,7 +25,7 @@ Every instruction, script, and configuration in a harness must belong to exactly
 
 ### Pillar 2: Skill (On-demand Playbooks)
 - **Nature** — Detailed procedural execution manuals loaded dynamically via tools (`view_file`, `invoke_skill`) only when matching task contexts arise.
-- **Scope** — Root-cause debugging (`systematic-debugging`), complexity reduction (`ponytail`), technical writing standards (`writing-docs`), and browser GUI orchestration (`delegate-to-aside`).
+- **Scope** — Root-cause debugging (`systematic-debugging`), complexity reduction (`ponytail`), technical writing standards (`writing-docs-in-korean`), and browser GUI orchestration (`delegate-to-aside`).
 - **Design Standard** — Freely contains 100–500 lines of rigorous playbooks and examples without contaminating always-on context.
 
 ### Pillar 3: Hook (Deterministic Binary Gates)
